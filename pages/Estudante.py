@@ -168,7 +168,7 @@ if st.session_state.get("atividades_em_exibicao"):
             )
             respostas[atividade] = resposta
 
-    if not ja_respondeu:
+        if not ja_respondeu:
         if st.button("📤 Enviar Respostas"):
             if any(r is None for r in respostas.values()):
                 st.warning("⚠️ Há questões não respondidas.")
@@ -197,9 +197,14 @@ if st.session_state.get("atividades_em_exibicao"):
                     acertos_detalhe[atividade] = situacao
                     linha_envio.extend([atividade, resposta, situacao])
 
+                # ✅ Seleciona uma credencial aleatória
                 contas = st.secrets["gcp_service_accounts"]
-                todas_credenciais = [contas["cred1"], contas["cred2"], contas["cred3"]]
-                cred = escolher_credencial_aleatoria(todas_credenciais)
+                credenciais_dict = {
+                    "cred1": contas["cred1"],
+                    "cred2": contas["cred2"],
+                    "cred3": contas["cred3"]
+                }
+                cred = escolher_credencial_aleatoria(credenciais_dict)
 
                 with st.spinner("Enviando suas respostas... Aguarde."):
                     start = time.time()
@@ -212,7 +217,9 @@ if st.session_state.get("atividades_em_exibicao"):
                 st.rerun()
 
             except Exception as e:
-                st.error(f"Erro ao enviar respostas: {e}")
+                st.error(f"❌ Erro ao enviar respostas: {e}")
+
+
 
 if id_unico in st.session_state.respostas_salvas:
     acertos_detalhe = st.session_state.respostas_salvas.get(id_unico, {})

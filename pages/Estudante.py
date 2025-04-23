@@ -168,7 +168,7 @@ if st.session_state.get("atividades_em_exibicao"):
             )
             respostas[atividade] = resposta
 
-        if not ja_respondeu:
+    if not ja_respondeu:
         if st.button("📤 Enviar Respostas"):
             if any(r is None for r in respostas.values()):
                 st.warning("⚠️ Há questões não respondidas.")

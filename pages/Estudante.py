@@ -2,9 +2,17 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import unicodedata
+import time
+import sys
+import os
+
+# 👉 Adiciona o caminho do projeto raiz para encontrar a pasta 'utils'
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from utils.envio_respostas import enviar_respostas_em_blocos, escolher_credencial_aleatoria
+
 import time
 
 st.set_page_config(page_title="Atividade Online AMA 2025", page_icon="✨")

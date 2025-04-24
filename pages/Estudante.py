@@ -162,8 +162,15 @@ if st.session_state.get("atividades_em_exibicao"):
     st.subheader("Responda cada questão marcando uma alternativa:")
 
     respostas = {}
-    disciplina = linha["DISCIPLINA"].values[0] if "DISCIPLINA" in linha.columns else "matematica"
-    disciplina = disciplina.lower()
+    
+    # ✅ Tratamento seguro da DISCIPLINA
+    try:
+        disciplina = linha["DISCIPLINA"].values[0]
+        if pd.isna(disciplina):
+            disciplina = "matematica"
+    except Exception:
+        disciplina = "matematica"
+    disciplina = str(disciplina).strip().lower()
 
     for idx, atividade in enumerate(atividades):
         st.markdown(f"### Questão {idx + 1}")
@@ -177,6 +184,7 @@ if st.session_state.get("atividades_em_exibicao"):
         else:
             resposta = st.radio("Escolha a alternativa:", ["A", "B", "C", "D", "E"], key=f"resp_{idx}", index=None)
             respostas[atividade] = resposta
+
 
     if not ja_respondeu:
         if st.button("📤 Enviar Respostas"):

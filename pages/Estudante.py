@@ -135,7 +135,7 @@ with col2:
 
 if gerar and not st.session_state.get("atividades_em_exibicao"):
     if not all([st.session_state.get("nome_estudante", "").strip(), codigo_atividade.strip()]):
-        st.warning("⚠️ Por favor, preencha todos os campos.")
+        st.warning("⚠️ Por favor, preencha os campos Nome e Código.")
         st.stop()
     if not codigo_valido:
         st.warning("⚠️ Código da atividade inválido.")

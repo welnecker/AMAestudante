@@ -36,10 +36,6 @@ if codigo_atividade:
     st.session_state.codigo_digitado = codigo_atividade
 
 codigo_atividade = st.session_state.codigo_digitado
-escola = st.session_state.get("escola_estudante", "")
-turma = st.session_state.get("turma_estudante", "")
-st.text_input("Escola:", value=escola, disabled=True)
-st.text_input("Turma:", value=turma, disabled=True)
 
 def normalizar_texto(txt):
     txt = txt.lower().strip()
@@ -110,10 +106,20 @@ if "dados_atividades" not in st.session_state:
 dados = st.session_state.dados_atividades
 linha_codigo = dados[dados["CODIGO"] == codigo_atividade]
 codigo_valido = not linha_codigo.empty
+
+if "atividades_em_exibicao" in st.session_state and st.session_state["atividades_em_exibicao"] and codigo_valido:
+    st.session_state["escola_estudante"] = linha_codigo.iloc[0]["ESCOLA"]
+    st.session_state["turma_estudante"] = linha_codigo.iloc[0]["TURMA"]
+
+escola = st.session_state.get("escola_estudante", "")
+turma = st.session_state.get("turma_estudante", "")
+st.text_input("Escola:", value=escola, disabled=True)
+st.text_input("Turma:", value=turma, disabled=True)
+
 id_unico = gerar_id_unico(
     st.session_state.nome_estudante,
-    st.session_state.get("escola_estudante", ""),
-    st.session_state.get("turma_estudante", ""),
+    escola,
+    turma,
     codigo_atividade
 )
 ja_respondeu = id_unico in st.session_state.respostas_enviadas
@@ -128,10 +134,6 @@ else:
         if not codigo_valido:
             st.warning("⚠️ Código da atividade inválido.")
             st.stop()
-
-        # ✅ Preenche escola e turma apenas após clique
-        st.session_state["escola_estudante"] = linha_codigo.iloc[0]["ESCOLA"]
-        st.session_state["turma_estudante"] = linha_codigo.iloc[0]["TURMA"]
 
         st.session_state["atividades_em_exibicao"] = True
         st.rerun()

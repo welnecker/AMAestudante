@@ -122,18 +122,34 @@ id_unico = gerar_id_unico(
 codigo_valido = not linha_codigo.empty
 ja_respondeu = id_unico in st.session_state.respostas_enviadas
 
-if ja_respondeu:
-    st.warning("❌ Você já fez a atividade com esse código.")
-else:
-    if st.button("🗕️ Gerar Atividade") and not st.session_state.get("atividades_em_exibicao"):
-        if not all([st.session_state.nome_estudante.strip(), codigo_atividade.strip()]):
-            st.warning("⚠️ Por favor, preencha todos os campos.")
-            st.stop()
-        if not codigo_valido:
-            st.warning("⚠️ Código da atividade inválido.")
-            st.stop()
-        st.session_state["atividades_em_exibicao"] = True
-        st.rerun()
+# 🎯 BOTÕES "Gerar Atividade" e "Reiniciar Tudo"
+col1, col2 = st.columns([3, 2])
+with col1:
+    gerar = st.button("🗕️ Gerar Atividade")
+
+with col2:
+    if st.button("🔄 Reiniciar Tudo"):
+        with st.spinner("Reiniciando tudo..."):
+            st.cache_data.clear()
+            st.session_state.clear()
+            components.html(
+                """
+                <script>
+                    window.location.reload(true);
+                </script>
+                """,
+                height=0,
+            )
+
+if gerar and not st.session_state.get("atividades_em_exibicao"):
+    if not all([st.session_state.nome_estudante.strip(), codigo_atividade.strip()]):
+        st.warning("⚠️ Por favor, preencha todos os campos.")
+        st.stop()
+    if not codigo_valido:
+        st.warning("⚠️ Código da atividade inválido.")
+        st.stop()
+    st.session_state["atividades_em_exibicao"] = True
+    st.rerun()
 
 nome_aluno = st.session_state.nome_estudante
 
@@ -148,7 +164,6 @@ if st.session_state.get("atividades_em_exibicao"):
     st.markdown("---")
     st.subheader("Responda cada questão marcando uma alternativa:")
 
-    # ⏱️ Atualização correta da flag de resposta
     ja_respondeu = id_unico in st.session_state.respostas_enviadas
     respostas = {}
     disciplina = linha["DISCIPLINA"].values[0] if "DISCIPLINA" in linha.columns else "matematica"
@@ -167,10 +182,8 @@ if st.session_state.get("atividades_em_exibicao"):
             resposta = st.radio("Escolha a alternativa:", ["A", "B", "C", "D", "E"], key=f"resp_{idx}", index=None)
             respostas[atividade] = resposta
 
-    # ✅ BOTÕES CONDICIONAIS
     if not ja_respondeu:
         if st.button("📤 Enviar Respostas"):
-            # 🚫 Impede reenvio mesmo que tente burlar
             if id_unico in st.session_state.respostas_enviadas:
                 st.warning("❌ Você já respondeu essa atividade.")
                 st.stop()
@@ -211,13 +224,9 @@ if st.session_state.get("atividades_em_exibicao"):
                     enviar_respostas_em_blocos([linha_envio], credencial=cred)
                     fim = time.time()
 
-                # ✅ Marca como respondido e salva
                 st.session_state.respostas_enviadas.add(id_unico)
                 st.session_state.respostas_salvas[id_unico] = acertos_detalhe
                 st.success(f"✅ Respostas enviadas! Você acertou {acertos}/{len(respostas)}. Tempo: {fim - start:.2f}s")
-
-                # 🔁 Marca como respondido
-                ja_respondeu = True
                 st.rerun()
 
             except Exception as e:
@@ -244,4 +253,3 @@ if st.session_state.get("atividades_em_exibicao"):
                     """,
                     height=0,
                 )
-

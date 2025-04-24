@@ -5,7 +5,7 @@ import unicodedata
 import time
 import sys
 import os
-import streamlit.components.v1 as components  # Para recarregar a página
+import streamlit.components.v1 as components
 
 # 👉 Adiciona o caminho do projeto raiz para encontrar a pasta 'utils'
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -122,13 +122,9 @@ id_unico = gerar_id_unico(
 codigo_valido = not linha_codigo.empty
 ja_respondeu = id_unico in st.session_state.respostas_enviadas
 
-# 🚫 Se já respondeu, emite alerta e mostra botão para limpar
-if ja_respondeu:
-    st.warning("❌ Você já fez a atividade com esse código.")
-
-# 👇 Exibe o botão Gerar Atividade apenas se não respondeu e não exibiu atividade ainda
+# BOTÃO GERAR ATIVIDADE
 if not ja_respondeu and not st.session_state.get("atividades_em_exibicao"):
-    if st.button("🗕️ Gerar Atividade"):
+    if st.button("🗵️ Gerar Atividade"):
         if not all([st.session_state.nome_estudante.strip(), codigo_atividade.strip()]):
             st.warning("⚠️ Por favor, preencha todos os campos.")
             st.stop()
@@ -138,7 +134,7 @@ if not ja_respondeu and not st.session_state.get("atividades_em_exibicao"):
         st.session_state["atividades_em_exibicao"] = True
         st.rerun()
 
-# 👇 Exibe as atividades se o botão foi clicado
+# EXIBE ATIVIDADES
 if st.session_state.get("atividades_em_exibicao"):
     linha = dados[dados["CODIGO"] == codigo_atividade.upper()]
     atividades = [
@@ -167,7 +163,6 @@ if st.session_state.get("atividades_em_exibicao"):
             resposta = st.radio("Escolha a alternativa:", ["A", "B", "C", "D", "E"], key=f"resp_{idx}", index=None)
             respostas[atividade] = resposta
 
-    # ✅ Botão Enviar Respostas (somente se ainda não respondeu)
     if not ja_respondeu:
         if st.button("📤 Enviar Respostas"):
             if id_unico in st.session_state.respostas_enviadas:
@@ -179,8 +174,7 @@ if st.session_state.get("atividades_em_exibicao"):
                 st.stop()
 
             try:
-                nome_aluno = st.session_state.nome_estudante  # ✅ Adicionado aqui!
-
+                nome_aluno = st.session_state.nome_estudante
                 gabarito_df = carregar_gabarito()
                 acertos = 0
                 acertos_detalhe = {}
@@ -208,7 +202,6 @@ if st.session_state.get("atividades_em_exibicao"):
                 })
 
                 with st.spinner("Enviando suas respostas... Aguarde."):
-
                     start = time.time()
                     enviar_respostas_em_blocos([linha_envio], credencial=cred)
                     fim = time.time()
@@ -216,15 +209,13 @@ if st.session_state.get("atividades_em_exibicao"):
                 st.session_state.respostas_enviadas.add(id_unico)
                 st.session_state.respostas_salvas[id_unico] = acertos_detalhe
                 st.success(f"✅ Respostas enviadas! Você acertou {acertos}/{len(respostas)}. Tempo: {fim - start:.2f}s")
-
                 st.rerun()
-
 
             except Exception as e:
                 st.error(f"❌ Erro ao enviar respostas: {e}")
 
-    # ✅ Exibe correção e botão Limpar (somente se já respondeu)
-elif ja_respondeu:
+# ✅ Exibe correção se já respondeu
+if id_unico in st.session_state.respostas_enviadas:
     acertos_detalhe = st.session_state.respostas_salvas.get(id_unico, {})
     st.markdown("---")
     for idx, atividade in enumerate(atividades):
@@ -233,17 +224,15 @@ elif ja_respondeu:
         st.markdown(f"**Questão {idx+1}:** {cor}")
     st.markdown("---")
 
+    # ✅ Botão para limpar a atividade
     if st.button("🔄 Limpar Atividade"):
-        # ✅ Mensagem de carregamento
-        st.warning("🧹 Aguarde, limpando a atividade...")
-
-        # ✅ Marca para limpar após reload
+        st.warning("🪟 Aguarde, limpando a atividade...")
         st.session_state.limpar_atividade = True
         st.experimental_rerun()
 
-# ✅ Executa limpeza logo na próxima renderização
+# ✅ Limpeza final após clique no botão
 if st.session_state.get("limpar_atividade"):
-    with st.spinner("🧹 Aguarde limpeza..."):
+    with st.spinner("🪟 Aguarde limpeza..."):
         st.cache_data.clear()
         st.session_state.clear()
         components.html(
@@ -254,7 +243,3 @@ if st.session_state.get("limpar_atividade"):
             """,
             height=0,
         )
-
-
-
-

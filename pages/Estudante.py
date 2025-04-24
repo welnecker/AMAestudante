@@ -127,7 +127,7 @@ col1, col2 = st.columns([3, 2])
 with col1:
     gerar = st.button("🗕️ Gerar Atividade")
 with col2:
-    st.info("ℹ️ Clique duas vezes no botão abaixo para reiniciar.")
+    st.info("ℹ️ Clique duas vezes")
     if st.button("🔄 Reiniciar Tudo"):
         with st.spinner("Reiniciando tudo..."):
             st.cache_data.clear()

@@ -24,15 +24,19 @@ st.markdown("""
 st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
 
 # Texto explicativo dividido e com fonte maior
+st.markdown("## Painel de Apoio à Recomposição das Aprendizagens")
+
 st.markdown("""
-<div style='font-size: 18px; line-height: 1.6;'>
-    Olá estudante, seja bem-vindo(a) ao <strong>Painel de Apoio à Recomposição das Aprendizagens</strong>.<br><br>
+**Acesse a página _Estudante_, no menu lateral, e faça a atividade proposta pelo seu professor.**
 
-    Nele você terá a oportunidade de testar seu aprendizado e seus conhecimentos atuais em <strong>Matemática</strong> e <strong>Língua Portuguesa</strong>.<br><br>
+Olá estudante, seja bem-vindo(a) ao **Painel de Apoio à Recomposição das Aprendizagens**.
 
-    <strong>Não perca esta oportunidade.</strong> Responda com atenção e <strong>só envie as respostas quando tiver certeza</strong>, pois <strong>só há uma oportunidade de envio</strong>.<br><br>
+Nele você terá a oportunidade de testar seu aprendizado e seus conhecimentos atuais em **Matemática** e **Língua Portuguesa**.
 
-    <strong>Bons estudos.</strong>
-</div>
-""", unsafe_allow_html=True)
+**Não perca esta oportunidade.**  
+Responda com atenção e **só envie as respostas quando tiver certeza**, pois **só há uma oportunidade de envio**.
+
+**Bons estudos.**
+""")
+
 

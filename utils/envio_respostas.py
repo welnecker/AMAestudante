@@ -16,14 +16,14 @@ import random
 
 def enviar_respostas_em_blocos(linhas, credencial):
     """
-    Envia uma lista de linhas para a aba RESPOSTAS_ALUNOS de uma planilha no Google Sheets.
+    Envia uma lista de linhas para a aba ATIVIDADES de uma planilha no Google Sheets.
     """
     creds = Credentials.from_service_account_info(credencial)
     service = build("sheets", "v4", credentials=creds)
 
     body = {"values": linhas}
     planilha_id = "17SUODxQqwWOoC9Bns--MmEDEruawdeEZzNXuwh3ZIj8"
-    intervalo = "RESPOSTAS_ALUNOS!A1"
+    intervalo = "ATIVIDADES!A1"
 
     service.spreadsheets().values().append(
         spreadsheetId=planilha_id,
@@ -32,6 +32,7 @@ def enviar_respostas_em_blocos(linhas, credencial):
         insertDataOption="INSERT_ROWS",
         body=body
     ).execute()
+
 
 def escolher_credencial_aleatoria(credenciais_dict):
     """

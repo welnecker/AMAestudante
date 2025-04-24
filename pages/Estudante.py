@@ -215,15 +215,7 @@ if st.session_state.get("atividades_em_exibicao"):
                 st.session_state.respostas_enviadas.add(id_unico)
                 st.session_state.respostas_salvas[id_unico] = acertos_detalhe
                 st.success(f"✅ Respostas enviadas! Você acertou {acertos}/{len(respostas)}. Tempo: {fim - start:.2f}s")
-
-                # 🧹 Limpa os campos do formulário
-                st.session_state.pop("nome_estudante", None)
-                st.session_state.pop("codigo_digitado", None)
-                st.session_state.pop("escola_estudante", None)
-                st.session_state.pop("turma_estudante", None)
-
                 st.rerun()
-
 
             except Exception as e:
                 st.error(f"❌ Erro ao enviar respostas: {e}")

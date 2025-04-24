@@ -5,7 +5,7 @@ import unicodedata
 import time
 import sys
 import os
-import streamlit.components.v1 as components
+import streamlit.components.v1 as components  # Para recarregar a página
 
 # 👉 Adiciona o caminho do projeto raiz para encontrar a pasta 'utils'
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -122,9 +122,10 @@ id_unico = gerar_id_unico(
 codigo_valido = not linha_codigo.empty
 ja_respondeu = id_unico in st.session_state.respostas_enviadas
 
-# BOTÃO GERAR ATIVIDADE
-if not ja_respondeu and not st.session_state.get("atividades_em_exibicao"):
-    if st.button("🗵️ Gerar Atividade"):
+if ja_respondeu:
+    st.warning("❌ Você já fez a atividade com esse código.")
+else:
+    if st.button("🗕️ Gerar Atividade") and not st.session_state.get("atividades_em_exibicao"):
         if not all([st.session_state.nome_estudante.strip(), codigo_atividade.strip()]):
             st.warning("⚠️ Por favor, preencha todos os campos.")
             st.stop()
@@ -134,7 +135,8 @@ if not ja_respondeu and not st.session_state.get("atividades_em_exibicao"):
         st.session_state["atividades_em_exibicao"] = True
         st.rerun()
 
-# EXIBE ATIVIDADES
+nome_aluno = st.session_state.nome_estudante
+
 if st.session_state.get("atividades_em_exibicao"):
     linha = dados[dados["CODIGO"] == codigo_atividade.upper()]
     atividades = [
@@ -146,6 +148,8 @@ if st.session_state.get("atividades_em_exibicao"):
     st.markdown("---")
     st.subheader("Responda cada questão marcando uma alternativa:")
 
+    # ⏱️ Atualização correta da flag de resposta
+    ja_respondeu = id_unico in st.session_state.respostas_enviadas
     respostas = {}
     disciplina = linha["DISCIPLINA"].values[0] if "DISCIPLINA" in linha.columns else "matematica"
     disciplina = disciplina.lower()
@@ -163,8 +167,10 @@ if st.session_state.get("atividades_em_exibicao"):
             resposta = st.radio("Escolha a alternativa:", ["A", "B", "C", "D", "E"], key=f"resp_{idx}", index=None)
             respostas[atividade] = resposta
 
+    # ✅ BOTÕES CONDICIONAIS
     if not ja_respondeu:
         if st.button("📤 Enviar Respostas"):
+            # 🚫 Impede reenvio mesmo que tente burlar
             if id_unico in st.session_state.respostas_enviadas:
                 st.warning("❌ Você já respondeu essa atividade.")
                 st.stop()
@@ -174,7 +180,6 @@ if st.session_state.get("atividades_em_exibicao"):
                 st.stop()
 
             try:
-                nome_aluno = st.session_state.nome_estudante
                 gabarito_df = carregar_gabarito()
                 acertos = 0
                 acertos_detalhe = {}
@@ -206,40 +211,37 @@ if st.session_state.get("atividades_em_exibicao"):
                     enviar_respostas_em_blocos([linha_envio], credencial=cred)
                     fim = time.time()
 
+                # ✅ Marca como respondido e salva
                 st.session_state.respostas_enviadas.add(id_unico)
                 st.session_state.respostas_salvas[id_unico] = acertos_detalhe
                 st.success(f"✅ Respostas enviadas! Você acertou {acertos}/{len(respostas)}. Tempo: {fim - start:.2f}s")
+
+                # 🔁 Marca como respondido
+                ja_respondeu = True
                 st.rerun()
 
             except Exception as e:
                 st.error(f"❌ Erro ao enviar respostas: {e}")
 
-# ✅ Exibe correção se já respondeu
-if id_unico in st.session_state.respostas_enviadas:
-    acertos_detalhe = st.session_state.respostas_salvas.get(id_unico, {})
-    st.markdown("---")
-    for idx, atividade in enumerate(atividades):
-        situacao = acertos_detalhe.get(atividade, "❓")
-        cor = "✅" if situacao == "Certo" else "❌"
-        st.markdown(f"**Questão {idx+1}:** {cor}")
-    st.markdown("---")
+    elif ja_respondeu:
+        acertos_detalhe = st.session_state.respostas_salvas.get(id_unico, {})
+        st.markdown("---")
+        for idx, atividade in enumerate(atividades):
+            situacao = acertos_detalhe.get(atividade, "❓")
+            cor = "✅" if situacao == "Certo" else "❌"
+            st.markdown(f"**Questão {idx+1}:** {cor}")
+        st.markdown("---")
 
-    # ✅ Botão para limpar a atividade
-if st.button("🔄 Limpar Atividade"):
-    st.session_state.limpar_atividade = True
+        if st.button("🔄 Limpar Atividade"):
+            with st.spinner("🧹 Aguarde, limpando a atividade..."):
+                st.cache_data.clear()
+                st.session_state.clear()
+                components.html(
+                    """
+                    <script>
+                        window.location.reload(true);
+                    </script>
+                    """,
+                    height=0,
+                )
 
-
-
-# ✅ Bloco de limpeza final (executado após clique no botão)
-if st.session_state.get("limpar_atividade"):
-    with st.spinner("🧹 Aguarde limpeza..."):
-        st.cache_data.clear()
-        st.session_state.clear()
-        components.html(
-            """
-            <script>
-                window.location.reload(true);
-            </script>
-            """,
-            height=0,
-        )

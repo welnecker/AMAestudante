@@ -163,7 +163,7 @@ if st.session_state.get("atividades_em_exibicao"):
 
     respostas = {}
     disciplina = linha["DISCIPLINA"].values[0] if "DISCIPLINA" in linha.columns else "matematica"
-    disciplina = disciplina.lower()
+    disciplina = st.session_state.get("disciplina", "").lower()
 
     for idx, atividade in enumerate(atividades):
         st.markdown(f"### Questão {idx + 1}")

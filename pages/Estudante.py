@@ -127,11 +127,16 @@ col1, col2 = st.columns([3, 2])
 with col1:
     gerar = st.button("🗕️ Gerar Atividade")
 with col2:
+    st.info("ℹ️ Clique duas vezes para reiniciar.")
     if st.button("🔄 Reiniciar Tudo"):
         with st.spinner("Reiniciando tudo..."):
             st.cache_data.clear()
             st.session_state.clear()
-            components.html("<script>window.location.reload(true);</script>", height=0)
+            components.html(
+                "<script>window.location.reload(true);</script>",
+                height=0,
+            )
+
 
 if gerar and not st.session_state.get("atividades_em_exibicao"):
     if not all([st.session_state.get("nome_estudante", "").strip(), codigo_atividade.strip()]):

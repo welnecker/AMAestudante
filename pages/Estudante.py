@@ -5,6 +5,8 @@ import unicodedata
 import time
 import sys
 import os
+import streamlit.components.v1 as components
+
 
 # 👉 Adiciona o caminho do projeto raiz para encontrar a pasta 'utils'
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -234,21 +236,18 @@ if id_unico in st.session_state.respostas_salvas:
 
     st.markdown("---")
 if st.button("🔄 Limpar Atividade"):
-    # 🧼 Limpa cache de funções com @st.cache_data
+    # 🧼 Limpa cache e variáveis da sessão
     st.cache_data.clear()
+    st.session_state.clear()
 
-    # 🧹 Limpa todos os campos relacionados ao estudante e atividade
-    st.session_state.pop("atividades_em_exibicao", None)
-    st.session_state.pop("nome_estudante", None)
-    st.session_state.pop("codigo_digitado", None)
-    st.session_state.pop("escola_estudante", None)
-    st.session_state.pop("turma_estudante", None)
+    # 💻 Força recarregamento completo da página (Ctrl+F5)
+    components.html(
+        """
+        <script>
+            window.location.reload(true);
+        </script>
+        """,
+        height=0,
+    )
 
-    # 🗑️ Remove as respostas salvas e radios
-    for idx in range(len(atividades)):
-        st.session_state.pop(f"resp_{idx}", None)
-    st.session_state.respostas_salvas.pop(id_unico, None)
-
-    # 🔁 Força a recarga completa
-    st.rerun()
 

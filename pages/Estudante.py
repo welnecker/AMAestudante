@@ -128,21 +128,11 @@ else:
         if not all([st.session_state.nome_estudante.strip(), codigo_atividade.strip()]):
             st.warning("⚠️ Por favor, preencha todos os campos.")
             st.stop()
-
-    # 🔄 Força recarregar dados atualizados da planilha
-    st.cache_data.clear()
-    st.session_state.dados_atividades = carregar_atividades()
-    dados = st.session_state.dados_atividades
-    linha_codigo = dados[dados["CODIGO"] == codigo_atividade]
-    codigo_valido = not linha_codigo.empty
-
-    if not codigo_valido:
-        st.warning("⚠️ Código da atividade inválido.")
-        st.stop()
-
-    st.session_state["atividades_em_exibicao"] = True
-    st.rerun()
-
+        if not codigo_valido:
+            st.warning("⚠️ Código da atividade inválido.")
+            st.stop()
+        st.session_state["atividades_em_exibicao"] = True
+        st.rerun()
 
 nome_aluno = st.session_state.nome_estudante
 

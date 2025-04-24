@@ -218,7 +218,8 @@ if ja_respondeu and id_unico in st.session_state.respostas_salvas:
         st.markdown(f"**Questão {idx+1}:** {cor}")
     st.markdown("---")
 
-    if st.button("🔄 Limpar Atividade"):
+if st.button("🔄 Limpar Atividade"):
+    with st.spinner("🧹 Aguarde, limpando a atividade..."):
         st.cache_data.clear()
         st.session_state.clear()
         components.html(
@@ -229,3 +230,4 @@ if ja_respondeu and id_unico in st.session_state.respostas_salvas:
             """,
             height=0,
         )
+

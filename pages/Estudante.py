@@ -148,6 +148,8 @@ if st.session_state.get("atividades_em_exibicao"):
     st.markdown("---")
     st.subheader("Responda cada questão marcando uma alternativa:")
 
+    # ⏱️ Atualização correta da flag de resposta
+    ja_respondeu = id_unico in st.session_state.respostas_enviadas
     respostas = {}
     disciplina = linha["DISCIPLINA"].values[0] if "DISCIPLINA" in linha.columns else "matematica"
     disciplina = disciplina.lower()
@@ -165,11 +167,18 @@ if st.session_state.get("atividades_em_exibicao"):
             resposta = st.radio("Escolha a alternativa:", ["A", "B", "C", "D", "E"], key=f"resp_{idx}", index=None)
             respostas[atividade] = resposta
 
+    # ✅ BOTÕES CONDICIONAIS
     if not ja_respondeu:
         if st.button("📤 Enviar Respostas"):
+            # 🚫 Impede reenvio mesmo que tente burlar
+            if id_unico in st.session_state.respostas_enviadas:
+                st.warning("❌ Você já respondeu essa atividade.")
+                st.stop()
+
             if any(r is None for r in respostas.values()):
                 st.warning("⚠️ Há questões não respondidas.")
                 st.stop()
+
             try:
                 gabarito_df = carregar_gabarito()
                 acertos = 0
@@ -202,32 +211,38 @@ if st.session_state.get("atividades_em_exibicao"):
                     enviar_respostas_em_blocos([linha_envio], credencial=cred)
                     fim = time.time()
 
+                # ✅ Marca como respondido e salva
                 st.session_state.respostas_enviadas.add(id_unico)
                 st.session_state.respostas_salvas[id_unico] = acertos_detalhe
                 st.success(f"✅ Respostas enviadas! Você acertou {acertos}/{len(respostas)}. Tempo: {fim - start:.2f}s")
+
+                # 🔁 Marca como respondido
+                ja_respondeu = True
                 st.rerun()
+
             except Exception as e:
                 st.error(f"❌ Erro ao enviar respostas: {e}")
 
-if ja_respondeu and id_unico in st.session_state.respostas_salvas:
-    acertos_detalhe = st.session_state.respostas_salvas.get(id_unico, {})
-    st.markdown("---")
-    for idx, atividade in enumerate(atividades):
-        situacao = acertos_detalhe.get(atividade, "❓")
-        cor = "✅" if situacao == "Certo" else "❌"
-        st.markdown(f"**Questão {idx+1}:** {cor}")
-    st.markdown("---")
+    elif ja_respondeu:
+        acertos_detalhe = st.session_state.respostas_salvas.get(id_unico, {})
+        st.markdown("---")
+        for idx, atividade in enumerate(atividades):
+            situacao = acertos_detalhe.get(atividade, "❓")
+            cor = "✅" if situacao == "Certo" else "❌"
+            st.markdown(f"**Questão {idx+1}:** {cor}")
+        st.markdown("---")
 
-if st.button("🔄 Limpar Atividade"):
-    with st.spinner("🧹 Aguarde, limpando a atividade..."):
-        st.cache_data.clear()
-        st.session_state.clear()
-        components.html(
-            """
-            <script>
-                window.location.reload(true);
-            </script>
-            """,
-            height=0,
-        )
+        if st.button("🔄 Limpar Atividade"):
+            with st.spinner("🧹 Aguarde, limpando a atividade..."):
+                st.cache_data.clear()
+                st.session_state.clear()
+                components.html(
+                    """
+                    <script>
+                        window.location.reload(true);
+                    </script>
+                    """,
+                    height=0,
+                )
+
 

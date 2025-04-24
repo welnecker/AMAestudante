@@ -224,27 +224,37 @@ if st.session_state.get("atividades_em_exibicao"):
                 st.error(f"❌ Erro ao enviar respostas: {e}")
 
     # ✅ Exibe correção e botão Limpar (somente se já respondeu)
-    elif ja_respondeu:
-        acertos_detalhe = st.session_state.respostas_salvas.get(id_unico, {})
-        st.markdown("---")
-        for idx, atividade in enumerate(atividades):
-            situacao = acertos_detalhe.get(atividade, "❓")
-            cor = "✅" if situacao == "Certo" else "❌"
-            st.markdown(f"**Questão {idx+1}:** {cor}")
-        st.markdown("---")
+elif ja_respondeu:
+    acertos_detalhe = st.session_state.respostas_salvas.get(id_unico, {})
+    st.markdown("---")
+    for idx, atividade in enumerate(atividades):
+        situacao = acertos_detalhe.get(atividade, "❓")
+        cor = "✅" if situacao == "Certo" else "❌"
+        st.markdown(f"**Questão {idx+1}:** {cor}")
+    st.markdown("---")
 
-        if st.button("🔄 Limpar Atividade"):
-            with st.spinner("🧹 Aguarde, limpando a atividade..."):
-                st.cache_data.clear()
-                st.session_state.clear()
-                components.html(
-                    """
-                    <script>
-                        window.location.reload(true);
-                    </script>
-                    """,
-                    height=0,
-                )
+    if st.button("🔄 Limpar Atividade"):
+        # ✅ Mensagem de carregamento
+        st.warning("🧹 Aguarde, limpando a atividade...")
+
+        # ✅ Marca para limpar após reload
+        st.session_state.limpar_atividade = True
+        st.experimental_rerun()
+
+# ✅ Executa limpeza logo na próxima renderização
+if st.session_state.get("limpar_atividade"):
+    with st.spinner("🧹 Aguarde limpeza..."):
+        st.cache_data.clear()
+        st.session_state.clear()
+        components.html(
+            """
+            <script>
+                window.location.reload(true);
+            </script>
+            """,
+            height=0,
+        )
+
 
 
 

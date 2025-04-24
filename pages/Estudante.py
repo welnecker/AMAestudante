@@ -126,15 +126,14 @@ if id_unico in st.session_state.respostas_enviadas:
     st.warning("❌ Você já fez a atividade com esse código.")
 else:
     if st.button("🗕️ Gerar Atividade") and not st.session_state.get("atividades_em_exibicao"):
-        carregar_atividades.clear()  # ⚠️ Limpa o cache com segurança ANTES de usar os dados
+        carregar_atividades.clear()  # limpa o cache com segurança
+    st.session_state.dados_atividades = carregar_atividades()
+    dados = st.session_state.dados_atividades
 
     if not all([st.session_state.nome_estudante.strip(), codigo_atividade.strip()]):
         st.warning("⚠️ Por favor, preencha todos os campos.")
         st.stop()
 
-    # Recarrega os dados após limpar o cache
-    st.session_state.dados_atividades = carregar_atividades()
-    dados = st.session_state.dados_atividades
     linha_codigo = dados[dados["CODIGO"] == codigo_atividade]
     codigo_valido = not linha_codigo.empty
 

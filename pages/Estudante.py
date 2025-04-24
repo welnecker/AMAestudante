@@ -113,3 +113,9 @@ if st.session_state.get("limpar_atividade"):
             st.session_state.pop(chave)
     st.session_state.pop("limpar_atividade", None)
     st.rerun()
+
+# ✨ Reexibir o botão Gerar Atividade (corrigido)
+if not st.session_state.get("atividades_em_exibicao") and st.session_state.nome_estudante and codigo_atividade:
+    if st.button("🗕️ Gerar Atividade"):
+        st.session_state["atividades_em_exibicao"] = True
+        st.rerun()

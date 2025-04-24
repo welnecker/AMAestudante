@@ -51,7 +51,7 @@ def normalizar_texto(txt):
 def gerar_id_unico(nome, escola, turma, codigo):
     return f"{normalizar_texto(nome)}_{normalizar_texto(escola)}_{normalizar_texto(turma)}_{normalizar_texto(codigo)}"
 
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False, ttl=60)
 def carregar_atividades():
     try:
         creds = Credentials.from_service_account_info(
@@ -77,6 +77,7 @@ def carregar_atividades():
     except Exception as e:
         st.error(f"Erro ao carregar atividades: {e}")
         return pd.DataFrame(columns=["CODIGO"])
+
 
 @st.cache_data(show_spinner=False)
 def carregar_gabarito():

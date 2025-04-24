@@ -5,7 +5,7 @@ import unicodedata
 import time
 import sys
 import os
-import streamlit.components.v1 as components  # Para recarregar a página
+import streamlit.components.v1 as components
 
 # 👉 Adiciona o caminho do projeto raiz para encontrar a pasta 'utils'
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -16,10 +16,19 @@ from utils.envio_respostas import enviar_respostas_em_blocos, escolher_credencia
 
 st.set_page_config(page_title="Atividade Online AMA 2025", page_icon="✨")
 
-st.subheader("Preencha abaixo somente seu nome completo, o código da atividade (em MAIÚSCULAS) e clique no botão Gerar Atividade:")
+# 🔒 Inicializa variáveis essenciais com segurança
+for chave in ["nome_estudante", "codigo_digitado", "respostas_enviadas", "respostas_salvas", "dados_atividades"]:
+    if chave not in st.session_state:
+        if chave == "respostas_enviadas":
+            st.session_state[chave] = set()
+        elif chave == "respostas_salvas":
+            st.session_state[chave] = {}
+        elif chave == "dados_atividades":
+            pass  # carregado abaixo com verificação própria
+        else:
+            st.session_state[chave] = ""
 
-if "nome_estudante" not in st.session_state:
-    st.session_state.nome_estudante = ""
+st.subheader("Preencha abaixo somente seu nome completo, o código da atividade (em MAIÚSCULAS) e clique no botão Gerar Atividade:")
 
 if not st.session_state.get("atividades_em_exibicao"):
     st.session_state.nome_estudante = st.text_input("Nome do(a) Estudante:")
@@ -28,9 +37,6 @@ else:
 
 st.subheader("Digite abaixo o código fornecido pelo(a) professor(a):")
 codigo_atividade = st.text_input("Código da atividade (ex: ABC123):").strip().upper()
-
-if "codigo_digitado" not in st.session_state:
-    st.session_state.codigo_digitado = ""
 
 if codigo_atividade:
     st.session_state.codigo_digitado = codigo_atividade
@@ -98,12 +104,6 @@ def carregar_gabarito():
         st.error(f"Erro ao carregar gabarito: {e}")
         return pd.DataFrame()
 
-if "respostas_enviadas" not in st.session_state:
-    st.session_state.respostas_enviadas = set()
-
-if "respostas_salvas" not in st.session_state:
-    st.session_state.respostas_salvas = {}
-
 if "dados_atividades" not in st.session_state:
     st.session_state.dados_atividades = carregar_atividades()
 
@@ -114,7 +114,7 @@ if not linha_codigo.empty:
     st.session_state["turma_estudante"] = linha_codigo.iloc[0]["TURMA"]
 
 id_unico = gerar_id_unico(
-    st.session_state.nome_estudante,
+    st.session_state.get("nome_estudante", ""),
     st.session_state.get("escola_estudante", ""),
     st.session_state.get("turma_estudante", ""),
     codigo_atividade
@@ -126,23 +126,15 @@ ja_respondeu = id_unico in st.session_state.respostas_enviadas
 col1, col2 = st.columns([3, 2])
 with col1:
     gerar = st.button("🗕️ Gerar Atividade")
-
 with col2:
     if st.button("🔄 Reiniciar Tudo"):
         with st.spinner("Reiniciando tudo..."):
             st.cache_data.clear()
             st.session_state.clear()
-            components.html(
-                """
-                <script>
-                    window.location.reload(true);
-                </script>
-                """,
-                height=0,
-            )
+            components.html("<script>window.location.reload(true);</script>", height=0)
 
 if gerar and not st.session_state.get("atividades_em_exibicao"):
-    if not all([st.session_state.nome_estudante.strip(), codigo_atividade.strip()]):
+    if not all([st.session_state.get("nome_estudante", "").strip(), codigo_atividade.strip()]):
         st.warning("⚠️ Por favor, preencha todos os campos.")
         st.stop()
     if not codigo_valido:
@@ -151,7 +143,7 @@ if gerar and not st.session_state.get("atividades_em_exibicao"):
     st.session_state["atividades_em_exibicao"] = True
     st.rerun()
 
-nome_aluno = st.session_state.nome_estudante
+nome_aluno = st.session_state.get("nome_estudante", "")
 
 if st.session_state.get("atividades_em_exibicao"):
     linha = dados[dados["CODIGO"] == codigo_atividade.upper()]
@@ -164,7 +156,6 @@ if st.session_state.get("atividades_em_exibicao"):
     st.markdown("---")
     st.subheader("Responda cada questão marcando uma alternativa:")
 
-    ja_respondeu = id_unico in st.session_state.respostas_enviadas
     respostas = {}
     disciplina = linha["DISCIPLINA"].values[0] if "DISCIPLINA" in linha.columns else "matematica"
     disciplina = disciplina.lower()
@@ -246,10 +237,6 @@ if st.session_state.get("atividades_em_exibicao"):
                 st.cache_data.clear()
                 st.session_state.clear()
                 components.html(
-                    """
-                    <script>
-                        window.location.reload(true);
-                    </script>
-                    """,
+                    "<script>window.location.reload(true);</script>",
                     height=0,
                 )

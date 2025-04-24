@@ -128,15 +128,12 @@ else:
     if st.button("🗕️ Gerar Atividade") and not st.session_state.get("atividades_em_exibicao"):
         if not all([st.session_state.nome_estudante.strip(), codigo_atividade.strip()]):
             st.warning("⚠️ Por favor, preencha todos os campos.")
-        st.stop()
-    if not codigo_valido:
-        st.warning("⚠️ Código da atividade inválido.")
-        st.stop()
-    if id_unico in st.session_state.respostas_enviadas:
-        st.warning("❌ Você já respondeu essa atividade.")
-        st.stop()
-    st.session_state["atividades_em_exibicao"] = True
-    st.rerun()
+            st.stop()
+        if not codigo_valido:
+            st.warning("⚠️ Código da atividade inválido.")
+            st.stop()
+        st.session_state["atividades_em_exibicao"] = True
+        st.rerun()
 
 nome_aluno = st.session_state.nome_estudante
 
@@ -235,19 +232,17 @@ if st.session_state.get("atividades_em_exibicao"):
             st.markdown(f"**Questão {idx+1}:** {cor}")
         st.markdown("---")
 
-if st.button("🔄 Limpar Atividade"):
-    with st.spinner("🧹 Aguarde, limpando a atividade..."):
-        components.html(
-            """
-            <script>
-                window.location.reload(true);
-            </script>
-            """,
-            height=0,
-        )
-        # Só limpa depois que o reload já foi emitido
-        st.cache_data.clear()
-        st.session_state.clear()
-
+        if st.button("🔄 Limpar Atividade"):
+            with st.spinner("🧹 Aguarde, limpando a atividade..."):
+                st.cache_data.clear()
+                st.session_state.clear()
+                components.html(
+                    """
+                    <script>
+                        window.location.reload(true);
+                    </script>
+                    """,
+                    height=0,
+                )
 
 

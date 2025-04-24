@@ -5,8 +5,7 @@ import unicodedata
 import time
 import sys
 import os
-import streamlit.components.v1 as components
-
+import streamlit.components.v1 as components  # Para recarregar a página
 
 # 👉 Adiciona o caminho do projeto raiz para encontrar a pasta 'utils'
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -14,8 +13,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from utils.envio_respostas import enviar_respostas_em_blocos, escolher_credencial_aleatoria
-
-import time
 
 st.set_page_config(page_title="Atividade Online AMA 2025", page_icon="✨")
 
@@ -39,7 +36,6 @@ if codigo_atividade:
     st.session_state.codigo_digitado = codigo_atividade
 
 codigo_atividade = st.session_state.codigo_digitado
-
 escola = st.session_state.get("escola_estudante", "")
 turma = st.session_state.get("turma_estudante", "")
 st.text_input("Escola:", value=escola, disabled=True)
@@ -65,21 +61,17 @@ def carregar_atividades():
             spreadsheetId="17SUODxQqwWOoC9Bns--MmEDEruawdeEZzNXuwh3ZIj8",
             range="ATIVIDADES_GERADAS!A1:Z"
         ).execute()
-
         values = result.get("values", [])
         if not values or len(values) < 2:
             return pd.DataFrame(columns=["CODIGO"])
-
         header = [col.strip().upper() for col in values[0]]
         rows = [row + [None] * (len(header) - len(row)) for row in values[1:]]
         df = pd.DataFrame(rows, columns=header)
         df["CODIGO"] = df["CODIGO"].astype(str).str.strip().str.upper()
         return df
-
     except Exception as e:
         st.error(f"Erro ao carregar atividades: {e}")
         return pd.DataFrame(columns=["CODIGO"])
-
 
 @st.cache_data(show_spinner=False)
 def carregar_gabarito():
@@ -121,10 +113,16 @@ if not linha_codigo.empty:
     st.session_state["escola_estudante"] = linha_codigo.iloc[0]["ESCOLA"]
     st.session_state["turma_estudante"] = linha_codigo.iloc[0]["TURMA"]
 
-id_unico = gerar_id_unico(st.session_state.nome_estudante, st.session_state.get("escola_estudante", ""), st.session_state.get("turma_estudante", ""), codigo_atividade)
+id_unico = gerar_id_unico(
+    st.session_state.nome_estudante,
+    st.session_state.get("escola_estudante", ""),
+    st.session_state.get("turma_estudante", ""),
+    codigo_atividade
+)
 codigo_valido = not linha_codigo.empty
+ja_respondeu = id_unico in st.session_state.respostas_enviadas
 
-if id_unico in st.session_state.respostas_enviadas:
+if ja_respondeu:
     st.warning("❌ Você já fez a atividade com esse código.")
 else:
     if st.button("🗕️ Gerar Atividade") and not st.session_state.get("atividades_em_exibicao"):
@@ -150,9 +148,7 @@ if st.session_state.get("atividades_em_exibicao"):
     st.markdown("---")
     st.subheader("Responda cada questão marcando uma alternativa:")
 
-    ja_respondeu = id_unico in st.session_state.respostas_enviadas
     respostas = {}
-
     disciplina = linha["DISCIPLINA"].values[0] if "DISCIPLINA" in linha.columns else "matematica"
     disciplina = disciplina.lower()
 
@@ -166,9 +162,7 @@ if st.session_state.get("atividades_em_exibicao"):
             st.radio("Escolha a alternativa:", ["A", "B", "C", "D", "E"], key=f"resp_{idx}", index=None, disabled=True)
             st.markdown(f"**Resposta enviada:** {resposta_salva}")
         else:
-            resposta = st.radio(
-                "Escolha a alternativa:", ["A", "B", "C", "D", "E"], key=f"resp_{idx}", index=None
-            )
+            resposta = st.radio("Escolha a alternativa:", ["A", "B", "C", "D", "E"], key=f"resp_{idx}", index=None)
             respostas[atividade] = resposta
 
     if not ja_respondeu:
@@ -176,7 +170,6 @@ if st.session_state.get("atividades_em_exibicao"):
             if any(r is None for r in respostas.values()):
                 st.warning("⚠️ Há questões não respondidas.")
                 st.stop()
-
             try:
                 gabarito_df = carregar_gabarito()
                 acertos = 0
@@ -188,26 +181,21 @@ if st.session_state.get("atividades_em_exibicao"):
                     escola,
                     turma,
                 ]
-
                 for atividade, resposta in respostas.items():
                     linha_gabarito = gabarito_df[gabarito_df["ATIVIDADE"] == atividade]
-                    gabarito = (
-                        linha_gabarito["GABARITO"].values[0] if not linha_gabarito.empty else "?"
-                    )
+                    gabarito = linha_gabarito["GABARITO"].values[0] if not linha_gabarito.empty else "?"
                     situacao = "Certo" if resposta.upper() == gabarito.upper() else "Errado"
                     if situacao == "Certo":
                         acertos += 1
                     acertos_detalhe[atividade] = situacao
                     linha_envio.extend([atividade, resposta, situacao])
 
-                # ✅ Seleciona uma credencial aleatória
                 contas = st.secrets["gcp_service_accounts"]
-                credenciais_dict = {
+                cred = escolher_credencial_aleatoria({
                     "cred1": contas["cred1"],
                     "cred2": contas["cred2"],
                     "cred3": contas["cred3"]
-                }
-                cred = escolher_credencial_aleatoria(credenciais_dict)
+                })
 
                 with st.spinner("Enviando suas respostas... Aguarde."):
                     start = time.time()
@@ -218,36 +206,26 @@ if st.session_state.get("atividades_em_exibicao"):
                 st.session_state.respostas_salvas[id_unico] = acertos_detalhe
                 st.success(f"✅ Respostas enviadas! Você acertou {acertos}/{len(respostas)}. Tempo: {fim - start:.2f}s")
                 st.rerun()
-
             except Exception as e:
                 st.error(f"❌ Erro ao enviar respostas: {e}")
 
-
-
-if id_unico in st.session_state.respostas_salvas:
+if ja_respondeu and id_unico in st.session_state.respostas_salvas:
     acertos_detalhe = st.session_state.respostas_salvas.get(id_unico, {})
-
-    if acertos_detalhe:
-        st.markdown("---")
-        for idx, atividade in enumerate(atividades):
-            situacao = acertos_detalhe.get(atividade, "❓")
-            cor = "✅" if situacao == "Certo" else "❌"
-            st.markdown(f"**Questão {idx+1}:** {cor}")
-
     st.markdown("---")
-if st.button("🔄 Limpar Atividade"):
-    # 🧼 Limpa cache e variáveis da sessão
-    st.cache_data.clear()
-    st.session_state.clear()
+    for idx, atividade in enumerate(atividades):
+        situacao = acertos_detalhe.get(atividade, "❓")
+        cor = "✅" if situacao == "Certo" else "❌"
+        st.markdown(f"**Questão {idx+1}:** {cor}")
+    st.markdown("---")
 
-    # 💻 Força recarregamento completo da página (Ctrl+F5)
-    components.html(
-        """
-        <script>
-            window.location.reload(true);
-        </script>
-        """,
-        height=0,
-    )
-
-
+    if st.button("🔄 Limpar Atividade"):
+        st.cache_data.clear()
+        st.session_state.clear()
+        components.html(
+            """
+            <script>
+                window.location.reload(true);
+            </script>
+            """,
+            height=0,
+        )

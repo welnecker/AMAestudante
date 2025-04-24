@@ -179,6 +179,8 @@ if st.session_state.get("atividades_em_exibicao"):
                 st.stop()
 
             try:
+                nome_aluno = st.session_state.nome_estudante  # ✅ Adicionado aqui!
+
                 gabarito_df = carregar_gabarito()
                 acertos = 0
                 acertos_detalhe = {}
@@ -216,6 +218,7 @@ if st.session_state.get("atividades_em_exibicao"):
                 st.success(f"✅ Respostas enviadas! Você acertou {acertos}/{len(respostas)}. Tempo: {fim - start:.2f}s")
 
                 st.rerun()
+
 
             except Exception as e:
                 st.error(f"❌ Erro ao enviar respostas: {e}")

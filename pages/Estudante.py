@@ -232,7 +232,7 @@ if st.session_state.get("atividades_em_exibicao"):
             st.markdown(f"**Questão {idx+1}:** {cor}")
         st.markdown("---")
 
-        st.info("ℹ️ Clique duas vezes para limpar a atividade.")
+        st.info("ℹ️ Clique duas vezes no botão abaixo para limpar a atividade.")
 if st.button("🔄 Limpar Atividade"):
     with st.spinner("🧹 Aguarde, limpando a atividade..."):
         st.cache_data.clear()

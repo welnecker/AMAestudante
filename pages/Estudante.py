@@ -76,15 +76,40 @@ def carregar_atividades():
         st.error(f"Erro ao carregar atividades: {e}")
         return pd.DataFrame(columns=["CODIGO"])
 
-# Limpeza do cache e campos após envio
-if st.session_state.get("limpar_cache"):
-    st.cache_data.clear()
-    st.session_state.pop("limpar_cache", None)
-    st.session_state.pop("codigo_digitado", None)
-    st.session_state.pop("atividades_em_exibicao", None)
-    st.session_state.pop("escola_estudante", None)
-    st.session_state.pop("turma_estudante", None)
-    st.session_state.pop("respostas_salvas", None)
-    st.session_state.pop("nome_estudante", None)
-    st.session_state.pop("respostas_enviadas", None)
+@st.cache_data(show_spinner=False)
+def carregar_gabarito():
+    try:
+        creds = Credentials.from_service_account_info(
+            st.secrets["gcp_service_account"],
+            scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"]
+        )
+        service = build("sheets", "v4", credentials=creds)
+        result = service.spreadsheets().values().get(
+            spreadsheetId="17SUODxQqwWOoC9Bns--MmEDEruawdeEZzNXuwh3ZIj8",
+            range="MATEMATICA!A1:N"
+        ).execute()
+        values = result.get("values", [])
+        if not values or len(values) < 2:
+            return pd.DataFrame(columns=["ATIVIDADE", "GABARITO"])
+        header = [col.strip().upper() for col in values[0]]
+        rows = [row + [None] * (len(header) - len(row)) for row in values[1:]]
+        df = pd.DataFrame(rows, columns=header)
+        df["ATIVIDADE"] = df["ATIVIDADE"].astype(str).str.strip()
+        df["GABARITO"] = df["GABARITO"].astype(str).str.strip().str.upper()
+        return df
+    except Exception as e:
+        st.error(f"Erro ao carregar gabarito: {e}")
+        return pd.DataFrame()
+
+if st.session_state.get("limpar_atividade"):
+    chaves_para_limpar = [
+        "atividades_em_exibicao", "codigo_digitado", "escola_estudante",
+        "turma_estudante", "nome_estudante"
+    ]
+    for chave in chaves_para_limpar:
+        st.session_state.pop(chave, None)
+    for chave in list(st.session_state.keys()):
+        if chave.startswith("resp_"):
+            st.session_state.pop(chave)
+    st.session_state.pop("limpar_atividade", None)
     st.rerun()

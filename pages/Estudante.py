@@ -36,6 +36,10 @@ if codigo_atividade:
     st.session_state.codigo_digitado = codigo_atividade
 
 codigo_atividade = st.session_state.codigo_digitado
+escola = st.session_state.get("escola_estudante", "")
+turma = st.session_state.get("turma_estudante", "")
+st.text_input("Escola:", value=escola, disabled=True)
+st.text_input("Turma:", value=turma, disabled=True)
 
 def normalizar_texto(txt):
     txt = txt.lower().strip()
@@ -105,23 +109,17 @@ if "dados_atividades" not in st.session_state:
 
 dados = st.session_state.dados_atividades
 linha_codigo = dados[dados["CODIGO"] == codigo_atividade]
-codigo_valido = not linha_codigo.empty
-
-if "atividades_em_exibicao" in st.session_state and st.session_state["atividades_em_exibicao"] and codigo_valido:
+if not linha_codigo.empty:
     st.session_state["escola_estudante"] = linha_codigo.iloc[0]["ESCOLA"]
     st.session_state["turma_estudante"] = linha_codigo.iloc[0]["TURMA"]
 
-escola = st.session_state.get("escola_estudante", "")
-turma = st.session_state.get("turma_estudante", "")
-st.text_input("Escola:", value=escola, disabled=True)
-st.text_input("Turma:", value=turma, disabled=True)
-
 id_unico = gerar_id_unico(
     st.session_state.nome_estudante,
-    escola,
-    turma,
+    st.session_state.get("escola_estudante", ""),
+    st.session_state.get("turma_estudante", ""),
     codigo_atividade
 )
+codigo_valido = not linha_codigo.empty
 ja_respondeu = id_unico in st.session_state.respostas_enviadas
 
 if ja_respondeu:
@@ -134,8 +132,116 @@ else:
         if not codigo_valido:
             st.warning("⚠️ Código da atividade inválido.")
             st.stop()
-
         st.session_state["atividades_em_exibicao"] = True
         st.rerun()
 
 nome_aluno = st.session_state.nome_estudante
+
+if st.session_state.get("atividades_em_exibicao"):
+    linha = dados[dados["CODIGO"] == codigo_atividade.upper()]
+    atividades = [
+        linha[col].values[0]
+        for col in linha.columns
+        if col.startswith("ATIVIDADE") and linha[col].values[0]
+    ]
+
+    st.markdown("---")
+    st.subheader("Responda cada questão marcando uma alternativa:")
+
+    # ⏱️ Atualização correta da flag de resposta
+    ja_respondeu = id_unico in st.session_state.respostas_enviadas
+    respostas = {}
+    disciplina = linha["DISCIPLINA"].values[0] if "DISCIPLINA" in linha.columns else "matematica"
+    disciplina = disciplina.lower()
+
+    for idx, atividade in enumerate(atividades):
+        st.markdown(f"### Questão {idx + 1}")
+        url = f"https://questoesama.pages.dev/{disciplina}/{atividade}.jpg"
+        st.image(url, use_container_width=True)
+
+        if ja_respondeu:
+            resposta_salva = st.session_state.respostas_salvas.get(id_unico, {}).get(atividade, "❓")
+            st.radio("Escolha a alternativa:", ["A", "B", "C", "D", "E"], key=f"resp_{idx}", index=None, disabled=True)
+            st.markdown(f"**Resposta enviada:** {resposta_salva}")
+        else:
+            resposta = st.radio("Escolha a alternativa:", ["A", "B", "C", "D", "E"], key=f"resp_{idx}", index=None)
+            respostas[atividade] = resposta
+
+    # ✅ BOTÕES CONDICIONAIS
+    if not ja_respondeu:
+        if st.button("📤 Enviar Respostas"):
+            # 🚫 Impede reenvio mesmo que tente burlar
+            if id_unico in st.session_state.respostas_enviadas:
+                st.warning("❌ Você já respondeu essa atividade.")
+                st.stop()
+
+            if any(r is None for r in respostas.values()):
+                st.warning("⚠️ Há questões não respondidas.")
+                st.stop()
+
+            try:
+                gabarito_df = carregar_gabarito()
+                acertos = 0
+                acertos_detalhe = {}
+                linha_envio = [
+                    datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+                    codigo_atividade,
+                    nome_aluno,
+                    escola,
+                    turma,
+                ]
+                for atividade, resposta in respostas.items():
+                    linha_gabarito = gabarito_df[gabarito_df["ATIVIDADE"] == atividade]
+                    gabarito = linha_gabarito["GABARITO"].values[0] if not linha_gabarito.empty else "?"
+                    situacao = "Certo" if resposta.upper() == gabarito.upper() else "Errado"
+                    if situacao == "Certo":
+                        acertos += 1
+                    acertos_detalhe[atividade] = situacao
+                    linha_envio.extend([atividade, resposta, situacao])
+
+                contas = st.secrets["gcp_service_accounts"]
+                cred = escolher_credencial_aleatoria({
+                    "cred1": contas["cred1"],
+                    "cred2": contas["cred2"],
+                    "cred3": contas["cred3"]
+                })
+
+                with st.spinner("Enviando suas respostas... Aguarde."):
+                    start = time.time()
+                    enviar_respostas_em_blocos([linha_envio], credencial=cred)
+                    fim = time.time()
+
+                # ✅ Marca como respondido e salva
+                st.session_state.respostas_enviadas.add(id_unico)
+                st.session_state.respostas_salvas[id_unico] = acertos_detalhe
+                st.success(f"✅ Respostas enviadas! Você acertou {acertos}/{len(respostas)}. Tempo: {fim - start:.2f}s")
+
+                # 🔁 Marca como respondido
+                ja_respondeu = True
+                st.rerun()
+
+            except Exception as e:
+                st.error(f"❌ Erro ao enviar respostas: {e}")
+
+    elif ja_respondeu:
+        acertos_detalhe = st.session_state.respostas_salvas.get(id_unico, {})
+        st.markdown("---")
+        for idx, atividade in enumerate(atividades):
+            situacao = acertos_detalhe.get(atividade, "❓")
+            cor = "✅" if situacao == "Certo" else "❌"
+            st.markdown(f"**Questão {idx+1}:** {cor}")
+        st.markdown("---")
+
+        if st.button("🔄 Limpar Atividade"):
+            with st.spinner("🧹 Aguarde, limpando a atividade..."):
+                st.cache_data.clear()
+                st.session_state.clear()
+                components.html(
+                    """
+                    <script>
+                        window.location.reload(true);
+                    </script>
+                    """,
+                    height=0,
+                )
+

@@ -17,7 +17,7 @@ import time
 
 st.set_page_config(page_title="Atividade Online AMA 2025", page_icon="✨")
 
-st.subheader("Preencha somente seu nome completo, o código da atividade (em MAIÚSCULAS) E CLIQUE NO BOTÃO Gerar Atividade:")
+st.subheader("Preencha abaixo somente seu nome completo, o código da atividade (em MAIÚSCULAS) e clique no botão Gerar Atividade:")
 
 if "nome_estudante" not in st.session_state:
     st.session_state.nome_estudante = ""

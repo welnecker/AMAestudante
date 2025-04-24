@@ -1,22 +1,44 @@
 import streamlit as st
 
+# Configurações da página
 st.set_page_config(page_title="Painel de Apoio à Recomposição", page_icon="📚")
 
-# Insere a imagem de fundo ou capa
-st.image("https://raw.githubusercontent.com/welnecker/questoesama/main/img/fundo.jpg", use_column_width=True)
+# CSS para plano de fundo com a imagem
+st.markdown("""
+    <style>
+    .stApp {
+        background-image: url("https://raw.githubusercontent.com/welnecker/questoesama/main/img/fundo.jpg");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+    }
+    .custom-text {
+        background-color: rgba(255, 255, 255, 0.8);
+        padding: 1.5rem;
+        border-radius: 12px;
+        font-size: 18px;
+        line-height: 1.6;
+    }
+    h3 {
+        font-size: 28px;
+        color: #003366;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
+# Conteúdo com caixa semi-transparente
 st.markdown("<h3 style='text-align: center;'>Painel de Apoio à Recomposição das Aprendizagens</h3>", unsafe_allow_html=True)
 
-st.write("""
-Olá estudante, seja bem-vindo(a) ao Painel de Apoio à Recomposição das Aprendizagens.
+st.markdown("""
+<div class="custom-text">
+<p>Olá estudante, seja bem-vindo(a) ao <strong>Painel de Apoio à Recomposição das Aprendizagens</strong>.</p>
 
-Nele você terá a oportunidade de testar seu aprendizado e seus conhecimentos atuais em Matemática e Língua Portuguesa.
+<p>Nele você terá a oportunidade de testar seu aprendizado e seus conhecimentos atuais em <strong>Matemática</strong> e <strong>Língua Portuguesa</strong>.</p>
 
-**Não perca esta oportunidade, responda com atenção e só envie as respostas quando tiver certeza, pois só há uma chance de envio.**
+<p><strong>Não perca esta oportunidade</strong>, responda com atenção e <strong>só envie as respostas quando tiver certeza</strong>, pois <strong>só há uma chance de envio</strong>.</p>
 
-**Bons estudos.**
-""")
+<p><strong>Bons estudos.</strong></p>
 
-st.markdown("<p style='font-family:monospace; font-size:16px;'>Acesse a página <u><b>Estudante</b></u>, no menu lateral, e faça a atividade proposta pelo seu professor.</p>", unsafe_allow_html=True)
-
-
+<p style='font-family:monospace; font-size:16px;'>Acesse a página <u><b>Estudante</b></u>, no menu lateral, e faça a atividade proposta pelo seu professor.</p>
+</div>
+""", unsafe_allow_html=True)

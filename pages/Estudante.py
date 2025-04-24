@@ -226,13 +226,13 @@ if id_unico in st.session_state.respostas_enviadas:
 
     # ✅ Botão para limpar a atividade
 if st.button("🔄 Limpar Atividade"):
-    st.warning("🧹 Aguarde, limpando a atividade...")
     st.session_state.limpar_atividade = True
 
 
-# ✅ Limpeza final após clique no botão
+
+# ✅ Bloco de limpeza final (executado após clique no botão)
 if st.session_state.get("limpar_atividade"):
-    with st.spinner("🪟 Aguarde limpeza..."):
+    with st.spinner("🧹 Aguarde limpeza..."):
         st.cache_data.clear()
         st.session_state.clear()
         components.html(

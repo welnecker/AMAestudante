@@ -233,9 +233,15 @@ if id_unico in st.session_state.respostas_salvas:
             st.markdown(f"**Questão {idx+1}:** {cor}")
 
     st.markdown("---")
-    if st.button("🔄 Limpar Atividade"):
-        del st.session_state["atividades_em_exibicao"]
-        for idx in range(len(atividades)):
-            st.session_state.pop(f"resp_{idx}", None)
-        st.session_state.respostas_salvas.pop(id_unico, None)
-        st.rerun()
+if st.button("🔄 Limpar Atividade"):
+    st.session_state.pop("atividades_em_exibicao", None)
+    st.session_state.pop("nome_estudante", None)
+    st.session_state.pop("codigo_digitado", None)
+    st.session_state.pop("escola_estudante", None)
+    st.session_state.pop("turma_estudante", None)
+
+    for idx in range(len(atividades)):
+        st.session_state.pop(f"resp_{idx}", None)
+        
+    st.session_state.respostas_salvas.pop(id_unico, None)
+    st.rerun()

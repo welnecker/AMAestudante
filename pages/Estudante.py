@@ -127,7 +127,7 @@ col1, col2 = st.columns([3, 2])
 with col1:
     gerar = st.button("🗕️ Gerar Atividade")
 with col2:
-    st.info("ℹ️ Clique duas vezes")
+    st.info("ℹ️ Clique duas vezes no botão abaixo para Reiniciar:")
     if st.button("🔄 Reiniciar Tudo"):
         with st.spinner("Reiniciando tudo..."):
             st.cache_data.clear()
@@ -163,7 +163,7 @@ if st.session_state.get("atividades_em_exibicao"):
 
     respostas = {}
     disciplina = linha["DISCIPLINA"].values[0] if "DISCIPLINA" in linha.columns else "matematica"
-    disciplina = st.session_state.get("disciplina", "").lower()
+    disciplina = disciplina.lower()
 
     for idx, atividade in enumerate(atividades):
         st.markdown(f"### Questão {idx + 1}")

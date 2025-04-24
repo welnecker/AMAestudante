@@ -215,7 +215,12 @@ if st.session_state.get("atividades_em_exibicao"):
                 st.session_state.respostas_enviadas.add(id_unico)
                 st.session_state.respostas_salvas[id_unico] = acertos_detalhe
                 st.success(f"✅ Respostas enviadas! Você acertou {acertos}/{len(respostas)}. Tempo: {fim - start:.2f}s")
+
+                # 🔄 Limpa o cache para que uma nova atividade seja buscada corretamente
+                carregar_atividades.clear()
+
                 st.rerun()
+
 
             except Exception as e:
                 st.error(f"❌ Erro ao enviar respostas: {e}")

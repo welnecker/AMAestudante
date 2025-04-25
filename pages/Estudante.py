@@ -231,7 +231,27 @@ if st.session_state.get("atividades_em_exibicao"):
                 st.session_state.respostas_enviadas.add(id_unico)
                 st.session_state.respostas_salvas[id_unico] = acertos_detalhe
                 st.success(f"✅ Respostas enviadas! Você acertou {acertos}/{len(respostas)}. Tempo: {fim - start:.2f}s")
+                st.balloons()
+                st.markdown(
+                    """
+                    <div style='
+                        background-color: #d4edda;
+                        padding: 20px;
+                        border-radius: 10px;
+                        text-align: center;
+                        font-size: 24px;
+                        font-weight: bold;
+                        color: #155724;
+                        border: 2px solid #c3e6cb;
+                        margin-top: 20px;
+                    '>
+                        🎉 Atividade concluída com sucesso!
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
                 st.rerun()
+
 
             except Exception as e:
                 st.error(f"❌ Erro ao enviar respostas: {e}")

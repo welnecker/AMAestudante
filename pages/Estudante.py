@@ -250,7 +250,11 @@ if st.session_state.get("atividades_em_exibicao"):
                     """,
                     unsafe_allow_html=True
                 )
-                st.rerun()
+
+                # Aguarda 3 segundos e reroda
+            #    time.sleep(3)
+             #   st.rerun()
+
 
 
             except Exception as e:

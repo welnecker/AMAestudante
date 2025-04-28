@@ -6,3 +6,25 @@
 __pycache__/
 *.pyc
 .env
+
+# Ignorar ambientes virtuais
+venv/
+.env
+
+# Ignorar arquivos de cache do Python
+__pycache__/
+*.pyc
+
+# Ignorar configurações locais de Streamlit
+.streamlit/secrets.toml
+.streamlit/config.toml
+
+# Ignorar arquivos temporários
+*.log
+*.csv
+*.xlsx
+.DS_Store
+
+# Ignorar pastas e arquivos temporários
+tmp/
+temp/

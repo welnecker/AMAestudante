@@ -237,5 +237,5 @@ if st.button("🔄 Limpar Atividade"):
             "<script>window.location.reload(true);</script>",
             height=0,
         )
-        #
+        
 

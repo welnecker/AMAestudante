@@ -12,13 +12,11 @@ from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from utils.envio_respostas import enviar_respostas_em_blocos, escolher_credencial_aleatoria
 
-# --- FUNÇÃO AUXILIAR ---
+# --- FUNÇÕES AUXILIARES ---
 def limpar_nome_atividade(atividade):
-    """Remove a extensão .jpg, mantendo letras e prefixos intactos."""
     return atividade.strip().replace(".jpg", "")
 
 def gerar_id_unico(nome, escola, turma, codigo):
-    """Gera um identificador único em maiúsculas baseado em nome + escola + turma + código."""
     return f"{nome.strip().upper()}__{escola.strip().upper()}__{turma.strip().upper()}__{codigo.strip().upper()}"
 
 @st.cache_data(ttl=300, show_spinner=False)
@@ -56,6 +54,11 @@ for chave in ["nome_estudante", "codigo_digitado", "respostas_enviadas", "respos
             pass
         else:
             st.session_state[chave] = ""
+
+# --- BLOQUEIO SE FINALIZADO ---
+if st.session_state.get("atividade_finalizada"):
+    st.success("🎉 Atividade Finalizada. Obrigado.")
+    st.stop()
 
 # --- ENTRADA DO USUÁRIO ---
 st.subheader("Preencha abaixo somente seu nome completo, o código da atividade (em MAIÚSCULAS) e clique no botão Gerar Atividade:")
@@ -113,11 +116,8 @@ def carregar_gabarito():
         st.warning(f"⚠️ Falha ao carregar gabarito: {e}")
         return pd.DataFrame(columns=["ATIVIDADE", "GABARITO", "ATIVIDADE_NORMALIZADA"])
 
-# --- PROCESSAMENTO DO CÓDIGO ---
-if "dados_atividades" not in st.session_state:
-    st.session_state.dados_atividades = carregar_atividades()
-
-dados = st.session_state.dados_atividades
+# --- EXIBIÇÃO DAS QUESTÕES E ENVIO DAS RESPOSTAS ---
+dados = st.session_state.dados_atividades = carregar_atividades()
 linha_codigo = dados[dados["CODIGO"] == codigo_atividade]
 if not linha_codigo.empty:
     st.session_state["escola_estudante"] = linha_codigo.iloc[0].get("ESCOLA", "")
@@ -125,143 +125,77 @@ if not linha_codigo.empty:
 
 escola = st.session_state.get("escola_estudante", "")
 turma = st.session_state.get("turma_estudante", "")
-st.text_input("Escola:", value=escola, disabled=True)
-st.text_input("Turma:", value=turma, disabled=True)
-
 id_unico = gerar_id_unico(nome_aluno, escola, turma, codigo_atividade)
 ja_respondeu = verificar_resposta_enviada(id_unico)
-codigo_valido = not linha_codigo.empty
 
-# --- BOTÕES ---
-col1, col2 = st.columns([3, 2])
-with col1:
-    gerar = st.button("🗕️ Gerar Atividade")
-with col2:
-    st.info("ℹ️ Clique duas vezes no botão abaixo para Reiniciar:")
-    if st.button("🔄 Reiniciar Tudo"):
-        with st.spinner("Reiniciando tudo..."):
-            st.cache_data.clear()
-            st.session_state.clear()
-            components.html("<script>window.location.reload(true);</script>", height=0)
-
-if gerar and not st.session_state.get("atividades_em_exibicao"):
-    if not all([st.session_state.get("nome_estudante", "").strip(), codigo_atividade.strip()]):
-        st.warning("⚠️ Por favor, preencha os campos Nome e Código.")
-        st.stop()
-    if not codigo_valido:
-        st.warning("⚠️ Código da atividade inválido.")
-        st.stop()
-    if ja_respondeu:
-        st.error(
-            f"❌ Você já enviou essa atividade.\n\n"
-            f"Nome: **{nome_aluno.strip()}**\n"
-            f"Código: **{codigo_atividade}**\n"
-            f"Turma: **{turma}** — Escola: **{escola}**"
-        )
-        st.stop()
-    st.session_state["atividades_em_exibicao"] = True
-    st.rerun()
-
-# --- EXIBIÇÃO DAS QUESTÕES E ENVIO ---
-# (continua normalmente conforme o restante do seu script...)
-
-
-# --- EXIBIÇÃO DAS QUESTÕES ---
-if st.session_state.get("atividades_em_exibicao"):
-    linha = dados[dados["CODIGO"] == codigo_atividade.upper()]
+if linha_codigo.empty:
+    st.warning("⚠️ Código da atividade inválido.")
+elif ja_respondeu:
+    st.warning("⚠️ Você já respondeu essa atividade.")
+else:
     atividades = [
-        linha[col].values[0] for col in linha.columns if col.startswith("ATIVIDADE") and linha[col].values[0]
+        linha_codigo[col].values[0] for col in linha_codigo.columns if col.startswith("ATIVIDADE") and linha_codigo[col].values[0]
     ]
-    st.subheader("Responda cada questão marcando uma alternativa:")
-    respostas = {}
-    try:
-        disciplina = str(linha["DISCIPLINA"].values[0]).strip().lower()
-    except:
-        disciplina = "matematica"
-
+    disciplina = str(linha_codigo["DISCIPLINA"].values[0]).strip().lower() if "DISCIPLINA" in linha_codigo.columns else "matematica"
     base_url = "https://raw.githubusercontent.com/welnecker/questoesama/main"
     pasta = "matematica" if disciplina == "matematica" else "portugues"
 
+    st.session_state["atividades_em_exibicao"] = True
+    respostas = {}
     for idx, atividade in enumerate(atividades):
         st.markdown(f"### Questão {idx + 1}")
         url = f"{base_url}/{pasta}/{atividade.strip()}"
         st.image(url, use_container_width=True)
+        respostas[atividade] = st.radio("Escolha a alternativa:", ["A", "B", "C", "D", "E"], key=f"resp_{idx}", index=None)
 
-        if ja_respondeu:
-            resposta_salva = st.session_state.respostas_salvas.get(id_unico, {}).get(atividade, "❓")
-            st.radio("Escolha a alternativa:", ["A", "B", "C", "D", "E"], key=f"resp_{idx}", index=None, disabled=True)
-            st.markdown(f"**Resposta enviada:** {resposta_salva}")
-        else:
-            resposta = st.radio("Escolha a alternativa:", ["A", "B", "C", "D", "E"], key=f"resp_{idx}", index=None)
-            respostas[atividade] = resposta
+    if st.button("📤 Enviar Respostas"):
+        if any(r is None for r in respostas.values()):
+            st.warning("⚠️ Há questões não respondidas.")
+            st.stop()
 
-    if not ja_respondeu:
-        if st.button("📤 Enviar Respostas"):
-            if any(r is None for r in respostas.values()):
-                st.warning("⚠️ Há questões não respondidas.")
-                st.stop()
+        try:
+            gabarito_df = carregar_gabarito()
+            acertos = 0
+            acertos_detalhe = {}
+            linha_envio = [
+                datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+                id_unico,
+                codigo_atividade,
+                nome_aluno,
+                escola,
+                turma,
+            ]
+            for atividade, resposta in respostas.items():
+                atividade_limpa = limpar_nome_atividade(atividade)
+                linha_gabarito = gabarito_df[gabarito_df["ATIVIDADE_NORMALIZADA"] == atividade_limpa]
+                gabarito = linha_gabarito["GABARITO"].values[0] if not linha_gabarito.empty else "?"
+                situacao = "Certo" if resposta.upper() == gabarito.upper() else "Errado"
+                if situacao == "Certo":
+                    acertos += 1
+                acertos_detalhe[atividade] = situacao
+                linha_envio.extend([atividade, resposta, situacao])
 
-            try:
-                gabarito_df = carregar_gabarito()
-                acertos = 0
-                acertos_detalhe = {}
-                linha_envio = [
-                    datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
-                    codigo_atividade,
-                    nome_aluno,
-                    escola,
-                    turma,
-                ]
-                for atividade, resposta in respostas.items():
-                    atividade_limpa = limpar_nome_atividade(atividade)
-                    linha_gabarito = gabarito_df[gabarito_df["ATIVIDADE_NORMALIZADA"] == atividade_limpa]
-                    gabarito = linha_gabarito["GABARITO"].values[0] if not linha_gabarito.empty else "?"
-                    situacao = "Certo" if resposta.upper() == gabarito.upper() else "Errado"
-                    if situacao == "Certo":
-                        acertos += 1
-                    acertos_detalhe[atividade] = situacao
-                    linha_envio.extend([atividade, resposta, situacao])
+            contas = st.secrets["gcp_service_accounts"]
+            cred = escolher_credencial_aleatoria({
+                "cred1": contas["cred1"],
+                "cred2": contas["cred2"],
+                "cred3": contas["cred3"]
+            })
 
-                contas = st.secrets["gcp_service_accounts"]
-                cred = escolher_credencial_aleatoria({
-                    "cred1": contas["cred1"],
-                    "cred2": contas["cred2"],
-                    "cred3": contas["cred3"]
-                })
+            with st.spinner("Enviando suas respostas... Aguarde."):
+                enviar_respostas_em_blocos([linha_envio], credencial=cred)
 
-                with st.spinner("Enviando suas respostas... Aguarde."):
+            st.session_state.respostas_enviadas.add(id_unico)
+            st.session_state.respostas_salvas[id_unico] = acertos_detalhe
 
-                    start = time.time()
-                    enviar_respostas_em_blocos([linha_envio], credencial=cred)
-                    fim = time.time()
+            st.success(f"✅ Respostas enviadas com sucesso! Você acertou {acertos}/{len(respostas)}")
+            for idx, atividade in enumerate(atividades):
+                situacao = acertos_detalhe.get(atividade, "❓")
+                cor = "✅" if situacao == "Certo" else "❌"
+                st.markdown(f"**Questão {idx+1}:** {cor} ({situacao})")
 
-                st.session_state.respostas_enviadas.add(id_unico)
-                st.session_state.respostas_salvas[id_unico] = acertos_detalhe
-                st.success(f"✅ Respostas enviadas! Você acertou {acertos}/{len(respostas)}. Tempo: {fim - start:.2f}s")
-                st.balloons()
+            st.session_state["atividade_finalizada"] = True
+            st.rerun()
 
-            except Exception as e:
-                st.error(f"❌ Erro ao enviar respostas: {e}")
-
-
-
-    elif ja_respondeu:
-        acertos_detalhe = st.session_state.respostas_salvas.get(id_unico, {})
-        st.markdown("---")
-        for idx, atividade in enumerate(atividades):
-            situacao = acertos_detalhe.get(atividade, "❓")
-            cor = "✅" if situacao == "Certo" else "❌"
-            st.markdown(f"**Questão {idx+1}:** {cor}")
-        st.markdown("---")
-
-        st.info("ℹ️ Clique duas vezes no botão abaixo para limpar a atividade.")
-if st.button("🔄 Limpar Atividade"):
-    with st.spinner("🧹 Aguarde, limpando a atividade..."):
-        st.cache_data.clear()
-        st.session_state.clear()
-        components.html(
-            "<script>window.location.reload(true);</script>",
-            height=0,
-        )
-        
-#
+        except Exception as e:
+            st.error(f"❌ Erro ao enviar respostas: {e}")

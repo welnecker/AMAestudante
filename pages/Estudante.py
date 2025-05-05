@@ -11,6 +11,11 @@ from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from utils.envio_respostas import enviar_respostas_em_blocos, escolher_credencial_aleatoria
 
+def limpar_nome_atividade(atividade):
+    """Remove a extensão .jpg, mantendo letras e prefixos intactos."""
+    return atividade.strip().replace(".jpg", "")
+
+
 # --- CONFIGURAÇÃO STREAMLIT ---
 st.set_page_config(page_title="Atividade Online AMA 2025", page_icon="✨")
 
@@ -87,10 +92,12 @@ def carregar_gabarito():
         df = pd.read_csv(url)
         df["ATIVIDADE"] = df["ATIVIDADE"].astype(str).str.strip()
         df["GABARITO"] = df["GABARITO"].astype(str).str.strip()
+        df["ATIVIDADE_NORMALIZADA"] = df["ATIVIDADE"].apply(limpar_nome_atividade)
         return df
     except Exception as e:
         st.warning(f"⚠️ Falha ao carregar gabarito: {e}")
-        return pd.DataFrame(columns=["ATIVIDADE", "GABARITO"])
+        return pd.DataFrame(columns=["ATIVIDADE", "GABARITO", "ATIVIDADE_NORMALIZADA"])
+
 
 if "dados_atividades" not in st.session_state:
     st.session_state.dados_atividades = carregar_atividades()
@@ -170,78 +177,76 @@ if st.session_state.get("atividades_em_exibicao"):
 
 
     if not ja_respondeu:
-        if st.button("📤 Enviar Respostas"):
-            if id_unico in st.session_state.respostas_enviadas:
-                st.warning("❌ Você já respondeu essa atividade.")
-                st.stop()
+     if st.button("📤 Enviar Respostas"):
+        if id_unico in st.session_state.respostas_enviadas:
+            st.warning("❌ Você já respondeu essa atividade.")
+            st.stop()
 
-            if any(r is None for r in respostas.values()):
-                st.warning("⚠️ Há questões não respondidas.")
-                st.stop()
+        if any(r is None for r in respostas.values()):
+            st.warning("⚠️ Há questões não respondidas.")
+            st.stop()
 
-            try:
-                gabarito_df = carregar_gabarito()
-                acertos = 0
-                acertos_detalhe = {}
-                linha_envio = [
-                    datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
-                    codigo_atividade,
-                    nome_aluno,
-                    escola,
-                    turma,
-                ]
-                for atividade, resposta in respostas.items():
-                    linha_gabarito = gabarito_df[gabarito_df["ATIVIDADE"] == atividade]
-                    gabarito = linha_gabarito["GABARITO"].values[0] if not linha_gabarito.empty else "?"
-                    situacao = "Certo" if resposta.upper() == gabarito.upper() else "Errado"
-                    if situacao == "Certo":
-                        acertos += 1
-                    acertos_detalhe[atividade] = situacao
-                    linha_envio.extend([atividade, resposta, situacao])
+        try:
+            gabarito_df = carregar_gabarito()
+            acertos = 0
+            acertos_detalhe = {}
+            linha_envio = [
+                datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+                codigo_atividade,
+                nome_aluno,
+                escola,
+                turma,
+            ]
 
-                contas = st.secrets["gcp_service_accounts"]
-                cred = escolher_credencial_aleatoria({
-                    "cred1": contas["cred1"],
-                    "cred2": contas["cred2"],
-                    "cred3": contas["cred3"]
-                })
+            for atividade, resposta in respostas.items():
+                atividade_limpa = limpar_nome_atividade(atividade)
+                linha_gabarito = gabarito_df[gabarito_df["ATIVIDADE_NORMALIZADA"] == atividade_limpa]
+                gabarito = linha_gabarito["GABARITO"].values[0] if not linha_gabarito.empty else "?"
+                situacao = "Certo" if resposta.upper() == gabarito.upper() else "Errado"
+                if situacao == "Certo":
+                    acertos += 1
+                acertos_detalhe[atividade] = situacao
+                linha_envio.extend([atividade, resposta, situacao])
 
-                with st.spinner("Enviando suas respostas... Aguarde."):
-                    start = time.time()
-                    enviar_respostas_em_blocos([linha_envio], credencial=cred)
-                    fim = time.time()
+            contas = st.secrets["gcp_service_accounts"]
+            cred = escolher_credencial_aleatoria({
+                "cred1": contas["cred1"],
+                "cred2": contas["cred2"],
+                "cred3": contas["cred3"]
+            })
 
-                st.session_state.respostas_enviadas.add(id_unico)
-                st.session_state.respostas_salvas[id_unico] = acertos_detalhe
-                st.success(f"✅ Respostas enviadas! Você acertou {acertos}/{len(respostas)}. Tempo: {fim - start:.2f}s")
-                st.balloons()
-                st.markdown(
-                    """
-                    <div style='
-                        background-color: #d4edda;
-                        padding: 20px;
-                        border-radius: 10px;
-                        text-align: center;
-                        font-size: 24px;
-                        font-weight: bold;
-                        color: #155724;
-                        border: 2px solid #c3e6cb;
-                        margin-top: 20px;
-                    '>
-                        🎉 Atividade concluída com sucesso!
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
+            with st.spinner("Enviando suas respostas... Aguarde."):
 
-                # Aguarda 3 segundos e reroda
-            #    time.sleep(3)
-             #   st.rerun()
+                start = time.time()
+                enviar_respostas_em_blocos([linha_envio], credencial=cred)
+                fim = time.time()
 
+            st.session_state.respostas_enviadas.add(id_unico)
+            st.session_state.respostas_salvas[id_unico] = acertos_detalhe
+            st.success(f"✅ Respostas enviadas! Você acertou {acertos}/{len(respostas)}. Tempo: {fim - start:.2f}s")
+            st.balloons()
+            st.markdown(
+                """
+                <div style='
+                    background-color: #d4edda;
+                    padding: 20px;
+                    border-radius: 10px;
+                    text-align: center;
+                    font-size: 24px;
+                    font-weight: bold;
+                    color: #155724;
+                    border: 2px solid #c3e6cb;
+                    margin-top: 20px;
+                '>
+                    🎉 Atividade concluída com sucesso!
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
+        except Exception as e:
+            st.error(f"❌ Erro ao enviar respostas: {e}")
 
-            except Exception as e:
-                st.error(f"❌ Erro ao enviar respostas: {e}")
 
     elif ja_respondeu:
         acertos_detalhe = st.session_state.respostas_salvas.get(id_unico, {})

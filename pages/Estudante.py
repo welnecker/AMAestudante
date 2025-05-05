@@ -206,7 +206,12 @@ else:
         st.markdown(f"### Questão {idx + 1}")
         url = f"{base_url}/{pasta}/{atividade.strip()}"
         st.image(url, use_container_width=True)
-        respostas[atividade] = st.radio("Escolha a alternativa:", ["A", "B", "C", "D", "E"], key=f"resp_{idx}", index=None)
+        if st.session_state.get("atividade_finalizada"):
+            resposta_salva = st.session_state.respostas_salvas.get(id_unico, {}).get(atividade, "❓")
+            st.radio("Escolha a alternativa:", ["A", "B", "C", "D", "E"], key=f"resp_{idx}", index=None, disabled=True)
+            st.markdown(f"**Resposta enviada:** {resposta_salva}")
+        else:
+            respostas[atividade] = st.radio("Escolha a alternativa:", ["A", "B", "C", "D", "E"], key=f"resp_{idx}", index=None)
 
     if st.button("📤 Enviar Respostas"):
         if any(r is None for r in respostas.values()):

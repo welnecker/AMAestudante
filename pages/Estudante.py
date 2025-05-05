@@ -143,29 +143,6 @@ with col2:
             st.cache_data.clear()
             st.session_state.clear()
             components.html("<script>window.location.reload(true);</script>", height=0)
-
-if gerar and not st.session_state.get("atividades_em_exibicao"):
-    if not all([st.session_state.get("nome_estudante", "").strip(), codigo_atividade.strip()]):
-        st.warning("⚠️ Por favor, preencha os campos Nome e Código.")
-        st.stop()
-    if not codigo_valido:
-        st.warning("⚠️ Código da atividade inválido.")
-        st.stop()
-    if ja_respondeu:
-        st.error(
-            f"❌ Você já enviou essa atividade.\n\n"
-            f"Nome: **{nome_aluno.strip()}**\n"
-            f"Código: **{codigo_atividade}**\n"
-            f"Turma: **{turma}** — Escola: **{escola}**"
-        )
-        st.stop()
-    st.session_state["atividades_em_exibicao"] = True
-    st.rerun()
-
-# --- EXIBIÇÃO DAS QUESTÕES E ENVIO ---
-# (continua normalmente conforme o restante do seu script...)
-
-
 # --- EXIBIÇÃO DAS QUESTÕES E ENVIO DAS RESPOSTAS ---
 
 # Se atividade foi finalizada, exibe botão "Finalizar"
@@ -201,6 +178,7 @@ else:
     pasta = "matematica" if disciplina == "matematica" else "portugues"
 
     st.session_state["atividades_em_exibicao"] = True
+    st.session_state["gerar_desabilitado"] = True
     respostas = {}
     for idx, atividade in enumerate(atividades):
         st.markdown(f"### Questão {idx + 1}")
@@ -261,7 +239,7 @@ else:
 
             # Botão de finalização opcional
             st.session_state["atividade_finalizada"] = True
+            st.experimental_rerun()
 
         except Exception as e:
             st.error(f"❌ Erro ao enviar respostas: {e}")
-

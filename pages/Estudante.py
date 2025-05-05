@@ -12,11 +12,13 @@ from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from utils.envio_respostas import enviar_respostas_em_blocos, escolher_credencial_aleatoria
 
-# --- FUNÇÕES AUXILIARES ---
+# --- FUNÇÃO AUXILIAR ---
 def limpar_nome_atividade(atividade):
+    """Remove a extensão .jpg, mantendo letras e prefixos intactos."""
     return atividade.strip().replace(".jpg", "")
 
 def gerar_id_unico(nome, escola, turma, codigo):
+    """Gera um identificador único em maiúsculas baseado em nome + escola + turma + código."""
     return f"{nome.strip().upper()}__{escola.strip().upper()}__{turma.strip().upper()}__{codigo.strip().upper()}"
 
 @st.cache_data(ttl=300, show_spinner=False)
@@ -54,11 +56,6 @@ for chave in ["nome_estudante", "codigo_digitado", "respostas_enviadas", "respos
             pass
         else:
             st.session_state[chave] = ""
-
-# --- BLOQUEIO SE FINALIZADO ---
-if st.session_state.get("atividade_finalizada"):
-    st.success("🎉 Atividade Finalizada. Obrigado.")
-    st.stop()
 
 # --- ENTRADA DO USUÁRIO ---
 st.subheader("Preencha abaixo somente seu nome completo, o código da atividade (em MAIÚSCULAS) e clique no botão Gerar Atividade:")
@@ -116,7 +113,70 @@ def carregar_gabarito():
         st.warning(f"⚠️ Falha ao carregar gabarito: {e}")
         return pd.DataFrame(columns=["ATIVIDADE", "GABARITO", "ATIVIDADE_NORMALIZADA"])
 
+# --- PROCESSAMENTO DO CÓDIGO ---
+if "dados_atividades" not in st.session_state:
+    st.session_state.dados_atividades = carregar_atividades()
+
+dados = st.session_state.dados_atividades
+linha_codigo = dados[dados["CODIGO"] == codigo_atividade]
+if not linha_codigo.empty:
+    st.session_state["escola_estudante"] = linha_codigo.iloc[0].get("ESCOLA", "")
+    st.session_state["turma_estudante"] = linha_codigo.iloc[0].get("TURMA", "")
+
+escola = st.session_state.get("escola_estudante", "")
+turma = st.session_state.get("turma_estudante", "")
+st.text_input("Escola:", value=escola, disabled=True)
+st.text_input("Turma:", value=turma, disabled=True)
+
+id_unico = gerar_id_unico(nome_aluno, escola, turma, codigo_atividade)
+ja_respondeu = verificar_resposta_enviada(id_unico)
+codigo_valido = not linha_codigo.empty
+
+# --- BOTÕES ---
+col1, col2 = st.columns([3, 2])
+with col1:
+    gerar = st.button("🗕️ Gerar Atividade")
+with col2:
+    st.info("ℹ️ Clique duas vezes no botão abaixo para Reiniciar:")
+    if st.button("🔄 Reiniciar Tudo"):
+        with st.spinner("Reiniciando tudo..."):
+            st.cache_data.clear()
+            st.session_state.clear()
+            components.html("<script>window.location.reload(true);</script>", height=0)
+
+if gerar and not st.session_state.get("atividades_em_exibicao"):
+    if not all([st.session_state.get("nome_estudante", "").strip(), codigo_atividade.strip()]):
+        st.warning("⚠️ Por favor, preencha os campos Nome e Código.")
+        st.stop()
+    if not codigo_valido:
+        st.warning("⚠️ Código da atividade inválido.")
+        st.stop()
+    if ja_respondeu:
+        st.error(
+            f"❌ Você já enviou essa atividade.\n\n"
+            f"Nome: **{nome_aluno.strip()}**\n"
+            f"Código: **{codigo_atividade}**\n"
+            f"Turma: **{turma}** — Escola: **{escola}**"
+        )
+        st.stop()
+    st.session_state["atividades_em_exibicao"] = True
+    st.rerun()
+
+# --- EXIBIÇÃO DAS QUESTÕES E ENVIO ---
+# (continua normalmente conforme o restante do seu script...)
+
+
 # --- EXIBIÇÃO DAS QUESTÕES E ENVIO DAS RESPOSTAS ---
+
+# Se atividade foi finalizada, exibe botão "Finalizar"
+if st.session_state.get("atividade_finalizada") and not st.session_state.get("atividade_encerrada"):
+    if st.button("✅ Finalizar"):
+        st.session_state["atividade_encerrada"] = True
+        st.success("🎉 Atividade Finalizada. Obrigado.")
+    st.stop()
+elif st.session_state.get("atividade_encerrada"):
+    st.success("🎉 Atividade Finalizada. Obrigado.")
+    st.stop()
 dados = st.session_state.dados_atividades = carregar_atividades()
 linha_codigo = dados[dados["CODIGO"] == codigo_atividade]
 if not linha_codigo.empty:
@@ -194,8 +254,9 @@ else:
                 cor = "✅" if situacao == "Certo" else "❌"
                 st.markdown(f"**Questão {idx+1}:** {cor} ({situacao})")
 
+            # Botão de finalização opcional
             st.session_state["atividade_finalizada"] = True
-            st.rerun()
 
         except Exception as e:
             st.error(f"❌ Erro ao enviar respostas: {e}")
+

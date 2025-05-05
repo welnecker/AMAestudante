@@ -72,8 +72,27 @@ def carregar_atividades():
         st.error(f"Erro ao carregar atividades: {e}")
         return pd.DataFrame(columns=["CODIGO"])
 
+@st.cache_data(show_spinner=False)
+def carregar_gabarito():
+    try:
+        URLS = {
+            "matematica": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQhv1IMZCz0xYYNGiEIlrqzvsELrjozHr32CNYHdcHzVqYWwDUFolet_2XOxv4EX7Tu3vxOB4w-YUX9/pub?gid=2127889637&single=true&output=csv",
+            "portugues": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQhv1IMZCz0xYYNGiEIlrqzvsELrjozHr32CNYHdcHzVqYWwDUFolet_2XOxv4EX7Tu3vxOB4w-YUX9/pub?gid=1217179376&single=true&output=csv"
+        }
+        url = URLS.get(st.session_state.get("disciplina", "matematica"), URLS["matematica"])
+        df = pd.read_csv(url)
+        df["ATIVIDADE"] = df["ATIVIDADE"].astype(str).str.strip()
+        df["GABARITO"] = df["GABARITO"].astype(str).str.strip()
+        return df
+    except Exception as e:
+        st.warning(f"⚠️ Falha ao carregar gabarito: {e}")
+        return pd.DataFrame(columns=["ATIVIDADE", "GABARITO"])
+
 if "dados_atividades" not in st.session_state:
     st.session_state.dados_atividades = carregar_atividades()
+
+# ... [restante do código permanece igual, sem alterações adicionais aqui] ...
+
 
 dados = st.session_state.dados_atividades
 linha_codigo = dados[dados["CODIGO"] == codigo_atividade]

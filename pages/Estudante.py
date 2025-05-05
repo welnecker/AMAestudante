@@ -132,7 +132,7 @@ if st.session_state.get("atividades_em_exibicao"):
 
     for idx, atividade in enumerate(atividades):
         st.markdown(f"### Questão {idx + 1}")
-        url = f"{base_url}/{pasta}/{atividade}.jpg"
+        url = f"{base_url}/{pasta}/{atividade.strip()}"
         st.image(url, use_container_width=True)
 
         if ja_respondeu:
@@ -142,6 +142,7 @@ if st.session_state.get("atividades_em_exibicao"):
         else:
             resposta = st.radio("Escolha a alternativa:", ["A", "B", "C", "D", "E"], key=f"resp_{idx}", index=None)
             respostas[atividade] = resposta
+
 
 
 

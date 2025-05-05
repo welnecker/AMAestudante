@@ -40,6 +40,10 @@ if codigo_atividade:
 
 codigo_atividade = st.session_state.codigo_digitado
 
+# --- GARANTIR VARIÁVEL nome_aluno ---
+nome_aluno = st.session_state.get("nome_estudante", "")
+
+
 def normalizar_texto(txt):
     txt = txt.lower().strip()
     txt = ''.join(c for c in unicodedata.normalize('NFD', txt) if unicodedata.category(c) != 'Mn')

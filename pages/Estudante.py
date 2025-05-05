@@ -12,10 +12,14 @@ from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from utils.envio_respostas import enviar_respostas_em_blocos, escolher_credencial_aleatoria
 
-# --- FUNÇÕES AUXILIARES ---
+# --- FUNÇÃO AUXILIAR ---
 def limpar_nome_atividade(atividade):
     """Remove a extensão .jpg, mantendo letras e prefixos intactos."""
     return atividade.strip().replace(".jpg", "")
+
+def gerar_id_unico(nome, escola, turma, codigo):
+    """Gera um identificador único em maiúsculas baseado em nome + escola + turma + código."""
+    return f"{nome.strip().upper()}__{escola.strip().upper()}__{turma.strip().upper()}__{codigo.strip().upper()}"
 
 @st.cache_data(ttl=300, show_spinner=False)
 def verificar_resposta_enviada(id_unico):
@@ -31,8 +35,7 @@ def verificar_resposta_enviada(id_unico):
         ).execute()
         values = result.get("values", [])[1:]
         for linha in values:
-            linha_texto = ' '.join(linha)
-            if id_unico in linha_texto:
+            if id_unico in ' '.join(linha):
                 return True
         return False
     except Exception as e:
@@ -54,7 +57,7 @@ for chave in ["nome_estudante", "codigo_digitado", "respostas_enviadas", "respos
         else:
             st.session_state[chave] = ""
 
-# --- INTERFACE DE ENTRADA ---
+# --- ENTRADA DO USUÁRIO ---
 st.subheader("Preencha abaixo somente seu nome completo, o código da atividade (em MAIÚSCULAS) e clique no botão Gerar Atividade:")
 if not st.session_state.get("atividades_em_exibicao"):
     st.session_state.nome_estudante = st.text_input("Nome do(a) Estudante:")
@@ -68,9 +71,7 @@ if codigo_atividade:
 codigo_atividade = st.session_state.codigo_digitado
 nome_aluno = st.session_state.get("nome_estudante", "")
 
-def gerar_id_unico(nome, escola, turma, codigo):
-    return f"{nome.strip()}_{escola.strip()}_{turma.strip()}_{codigo.strip()}"
-
+# --- CARREGAMENTO DAS ATIVIDADES E GABARITO ---
 @st.cache_data(show_spinner=False, ttl=60)
 def carregar_atividades():
     try:
@@ -112,6 +113,7 @@ def carregar_gabarito():
         st.warning(f"⚠️ Falha ao carregar gabarito: {e}")
         return pd.DataFrame(columns=["ATIVIDADE", "GABARITO", "ATIVIDADE_NORMALIZADA"])
 
+# --- PROCESSAMENTO DO CÓDIGO ---
 if "dados_atividades" not in st.session_state:
     st.session_state.dados_atividades = carregar_atividades()
 
@@ -130,7 +132,7 @@ id_unico = gerar_id_unico(nome_aluno, escola, turma, codigo_atividade)
 ja_respondeu = verificar_resposta_enviada(id_unico)
 codigo_valido = not linha_codigo.empty
 
-# 🎯 BOTÕES "Gerar Atividade" e "Reiniciar Tudo"
+# --- BOTÕES ---
 col1, col2 = st.columns([3, 2])
 with col1:
     gerar = st.button("🗕️ Gerar Atividade")
@@ -150,10 +152,19 @@ if gerar and not st.session_state.get("atividades_em_exibicao"):
         st.warning("⚠️ Código da atividade inválido.")
         st.stop()
     if ja_respondeu:
-        st.warning("❌ Você já respondeu essa atividade.")
+        st.error(
+            f"❌ Você já enviou essa atividade.\n\n"
+            f"Nome: **{nome_aluno.strip()}**\n"
+            f"Código: **{codigo_atividade}**\n"
+            f"Turma: **{turma}** — Escola: **{escola}**"
+        )
         st.stop()
     st.session_state["atividades_em_exibicao"] = True
     st.rerun()
+
+# --- EXIBIÇÃO DAS QUESTÕES E ENVIO ---
+# (continua normalmente conforme o restante do seu script...)
+
 
 # --- EXIBIÇÃO DAS QUESTÕES ---
 if st.session_state.get("atividades_em_exibicao"):

@@ -11,6 +11,8 @@ import streamlit.components.v1 as components
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from utils.envio_respostas import enviar_respostas_em_blocos, escolher_credencial_aleatoria
+from googleapiclient.discovery import build
+
 
 # --- FUNÇÃO AUXILIAR ---
 def limpar_nome_atividade(atividade):
@@ -233,24 +235,39 @@ else:
             gabarito_df = carregar_gabarito()
             acertos = 0
             acertos_detalhe = {}
-            linha_envio = [
-                datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
-                id_unico,
-                codigo_atividade,
-                nome_aluno,
-                escola,
-                turma,
-            ]
-            for atividade, resposta in respostas.items():
-                atividade_limpa = limpar_nome_atividade(atividade)
-                linha_gabarito = gabarito_df[gabarito_df["ATIVIDADE_NORMALIZADA"] == atividade_limpa]
-                gabarito = linha_gabarito["GABARITO"].values[0] if not linha_gabarito.empty else "?"
-                situacao = "Certo" if resposta.upper() == gabarito.upper() else "Errado"
-                if situacao == "Certo":
-                    acertos += 1
-                acertos_detalhe[atividade] = situacao
-                linha_envio.extend([atividade, resposta, situacao])
 
+            # Cabeçalho fixo
+            linha_envio = [
+                datetime.now().strftime("%d/%m/%Y %H:%M:%S"),  # TIMESTAMP
+                codigo_atividade,                              # CODIGO
+                nome_aluno,                                    # NOME
+                escola,                                        # ESCOLA
+                turma                                          # TURMA
+            ]
+
+            # Garante Q1, R1, S1 até Q10, R10, S10
+            for i in range(10):
+                try:
+                    atividade = atividades[i]
+                    resposta = respostas.get(atividade, "").strip().upper()
+                    atividade_limpa = limpar_nome_atividade(atividade)
+
+                    # Busca gabarito da atividade
+                    linha_gabarito = gabarito_df[gabarito_df["ATIVIDADE_NORMALIZADA"] == atividade_limpa]
+                    gabarito = linha_gabarito["GABARITO"].values[0] if not linha_gabarito.empty else "?"
+
+                    situacao = "Certo" if resposta == gabarito.upper() else "Errado"
+                    if situacao == "Certo":
+                        acertos += 1
+
+                    acertos_detalhe[atividade] = situacao
+                    linha_envio.extend([atividade, resposta, situacao])
+
+                except IndexError:
+                    # Se tiver menos de 10 atividades, preenche com vazio
+                    linha_envio.extend(["", "", ""])
+
+            # Escolhe credencial aleatória
             contas = st.secrets["gcp_service_accounts"]
             cred = escolher_credencial_aleatoria({
                 "cred1": contas["cred1"],
@@ -265,15 +282,16 @@ else:
             st.session_state.respostas_salvas[id_unico] = acertos_detalhe
 
             st.success(f"✅ Respostas enviadas com sucesso! Você acertou {acertos}/{len(respostas)}")
+
             for idx, atividade in enumerate(atividades):
                 situacao = acertos_detalhe.get(atividade, "❓")
                 cor = "✅" if situacao == "Certo" else "❌"
-                st.markdown(f"**Questão {idx+1}:** {cor} ({situacao})")
+                st.markdown(f"**Questão {idx + 1}:** {cor} ({situacao})")
 
-            # Botão de finalização opcional
+            # Marca finalização da atividade
             st.session_state["atividade_finalizada"] = True
 
         except Exception as e:
             st.error(f"❌ Erro ao enviar respostas: {e}")
 
-#
+

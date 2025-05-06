@@ -265,3 +265,4 @@ else:
         except Exception as e:
             st.error(f"❌ Erro ao enviar respostas: {e}")
 
+#

@@ -103,32 +103,22 @@ def carregar_atividades():
         st.error(f"Erro ao carregar atividades: {e}")
         return pd.DataFrame(columns=["CODIGO"])
 
-@st.cache_data(show_spinner=False)
-def carregar_gabarito():
-    try:
-        URLS = {
-            "matematica": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQhv1IMZCz0xYYNGiEIlrqzvsELrjozHr32CNYHdcHzVqYWwDUFolet_2XOxv4EX7Tu3vxOB4w-YUX9/pub?gid=2127889637&single=true&output=csv",
-            "portugues": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQhv1IMZCz0xYYNGiEIlrqzvsELrjozHr32CNYHdcHzVqYWwDUFolet_2XOxv4EX7Tu3vxOB4w-YUX9/pub?gid=1217179376&single=true&output=csv"
-        }
-        url = URLS.get(st.session_state.get("disciplina", "matematica"), URLS["matematica"])
-        df = pd.read_csv(url)
-        df["ATIVIDADE"] = df["ATIVIDADE"].astype(str).str.strip()
-        df["GABARITO"] = df["GABARITO"].astype(str).str.strip()
-        df["ATIVIDADE_NORMALIZADA"] = df["ATIVIDADE"].apply(limpar_nome_atividade)
-        return df
-    except Exception as e:
-        st.warning(f"⚠️ Falha ao carregar gabarito: {e}")
-        return pd.DataFrame(columns=["ATIVIDADE", "GABARITO", "ATIVIDADE_NORMALIZADA"])
-
-# --- PROCESSAMENTO DO CÓDIGO ---
-if "dados_atividades" not in st.session_state or st.session_state.dados_atividades is False:
+# --- GARANTIR DADOS CARREGADOS COM SEGURANÇA ---
+if "dados_atividades" not in st.session_state or not isinstance(st.session_state.dados_atividades, pd.DataFrame):
     st.session_state.dados_atividades = carregar_atividades()
 
 dados = st.session_state.dados_atividades
+
+# ⚠️ Proteção extra: certifique-se de que existe a coluna 'CODIGO'
+if "CODIGO" not in dados.columns:
+    st.warning("⚠️ Os dados de atividades não foram carregados corretamente. Tente clicar em '🔄 Reiniciar Tudo'.")
+    st.stop()
+
 linha_codigo = dados[dados["CODIGO"] == codigo_atividade]
 if not linha_codigo.empty:
     st.session_state["escola_estudante"] = linha_codigo.iloc[0].get("ESCOLA", "")
     st.session_state["turma_estudante"] = linha_codigo.iloc[0].get("TURMA", "")
+
 
 escola = st.session_state.get("escola_estudante", "")
 turma = st.session_state.get("turma_estudante", "")

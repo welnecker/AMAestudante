@@ -135,16 +135,27 @@ codigo_valido = not linha_codigo.empty
 # --- BOTÕES ---
 col1, col2 = st.columns([3, 2])
 with col1:
-    gerar = st.button("🗕️ Gerar Atividade")
+    if "gerar_clicado" not in st.session_state:
+        st.session_state.gerar_clicado = False
+
+    gerar = st.button("🗕️ Gerar Atividade", disabled=st.session_state.gerar_clicado)
+
+    if gerar:
+        st.session_state.gerar_clicado = True
+        st.rerun()
+
 with col2:
     st.info("ℹ️ Clique duas vezes no botão abaixo para Reiniciar:")
     if st.button("🔄 Reiniciar Tudo"):
         with st.spinner("Reiniciando tudo..."):
             st.cache_data.clear()
             st.session_state.clear()
+            st.session_state.gerar_clicado = False  # Garante que o botão será reativado
+
             components.html("<script>window.location.reload(true);</script>", height=0)
 
-if gerar and not st.session_state.get("atividades_em_exibicao"):
+if st.session_state.get("gerar_clicado") and not st.session_state.get("atividades_em_exibicao"):
+
     if not all([st.session_state.get("nome_estudante", "").strip(), codigo_atividade.strip()]):
         st.warning("⚠️ Por favor, preencha os campos Nome e Código.")
         st.stop()

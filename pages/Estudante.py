@@ -144,15 +144,15 @@ with col1:
         st.session_state.gerar_clicado = True
         st.rerun()
 
-with col2:
-    st.info("ℹ️ Clique duas vezes no botão abaixo para Reiniciar:")
-    if st.button("🔄 Reiniciar Tudo"):
-        with st.spinner("Reiniciando tudo..."):
-            st.cache_data.clear()
-            st.session_state.clear()
-            st.session_state.gerar_clicado = False  # Garante que o botão será reativado
+#with col2:
+ #   st.info("ℹ️ Clique duas vezes no botão abaixo para Reiniciar:")
+  #  if st.button("🔄 Reiniciar Tudo"):
+   #     with st.spinner("Reiniciando tudo..."):
+    #        st.cache_data.clear()
+     #       st.session_state.clear()
+      #      st.session_state.gerar_clicado = False  # Garante que o botão será reativado
 
-            components.html("<script>window.location.reload(true);</script>", height=0)
+       #     components.html("<script>window.location.reload(true);</script>", height=0)
 
 if st.session_state.get("gerar_clicado") and not st.session_state.get("atividades_em_exibicao"):
 

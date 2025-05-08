@@ -217,7 +217,9 @@ else:
     respostas = {}
     for idx, atividade in enumerate(atividades):
         st.markdown(f"### Questão {idx + 1}")
-        url = f"{base_url}/{pasta}/{atividade.strip()}"
+        atividade_limpa = limpar_nome_atividade(atividade) + ".jpg"
+        url = f"{base_url}/{pasta}/{atividade_limpa}"
+
         st.image(url, use_container_width=True)
         if st.session_state.get("atividade_finalizada"):
             resposta_salva = st.session_state.respostas_salvas.get(id_unico, {}).get(atividade, "❓")

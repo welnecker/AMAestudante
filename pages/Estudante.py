@@ -13,8 +13,9 @@ from googleapiclient.discovery import build
 from utils.envio_respostas import enviar_respostas_em_blocos, escolher_credencial_aleatoria
 from googleapiclient.discovery import build
 
-# Configurações da página
+# --- CONFIGURAÇÃO STREAMLIT ---
 st.set_page_config(page_title="Painel de Apoio à Recomposição", page_icon="📚", initial_sidebar_state="collapsed")
+
 
 
 # --- FUNÇÃO AUXILIAR ---
@@ -47,8 +48,7 @@ def verificar_resposta_enviada(id_unico):
         st.warning(f"⚠️ Erro ao verificar respostas anteriores: {e}")
         return False
 
-# --- CONFIGURAÇÃO STREAMLIT ---
-st.set_page_config(page_title="Atividade Online AMA 2025", page_icon="✨")
+
 
 # --- INICIALIZA VARIÁVEIS DE ESTADO ---
 for chave in ["nome_estudante", "codigo_digitado", "respostas_enviadas", "respostas_salvas", "dados_atividades"]:

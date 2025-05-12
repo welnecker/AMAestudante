@@ -1,7 +1,8 @@
 import streamlit as st
 
 # Configurações da página
-st.set_page_config(page_title="Painel de Apoio à Recomposição", page_icon="📚")
+st.set_page_config(page_title="Painel de Apoio à Recomposição", page_icon="📚", initial_sidebar_state="collapsed")
+
 
 # CSS para plano de fundo com a imagem
 st.markdown("""
@@ -58,3 +59,10 @@ st.markdown("""
 <p style='font-family:monospace; font-size:16px;'>Acesse a página <u><b>Estudante</b></u>, no menu lateral, e faça a atividade proposta pelo seu professor.</p>
 </div>
 """, unsafe_allow_html=True)
+
+# Botão para ir à página do estudante
+st.markdown("<br>", unsafe_allow_html=True)
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    if st.button("🎓 Ir para a página do Estudante"):
+        st.switch_page("pages/Estudante.py")

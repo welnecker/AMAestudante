@@ -56,7 +56,7 @@ st.markdown("""
 
 <p><strong>Bons estudos.</strong></p>
 
-<p style='font-family:monospace; font-size:16px;'>Acesse a página <u><b>Estudante</b></u>, no menu lateral, e faça a atividade proposta pelo seu professor.</p>
+<p style='font-family:monospace; font-size:16px;'>Clique no botão abaixo e faça a atividade proposta pelo seu professor.</p>
 </div>
 """, unsafe_allow_html=True)
 

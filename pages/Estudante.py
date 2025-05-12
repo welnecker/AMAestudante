@@ -13,6 +13,9 @@ from googleapiclient.discovery import build
 from utils.envio_respostas import enviar_respostas_em_blocos, escolher_credencial_aleatoria
 from googleapiclient.discovery import build
 
+# Configurações da página
+st.set_page_config(page_title="Painel de Apoio à Recomposição", page_icon="📚", initial_sidebar_state="collapsed")
+
 
 # --- FUNÇÃO AUXILIAR ---
 def limpar_nome_atividade(atividade):

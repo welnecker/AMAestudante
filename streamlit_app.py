@@ -64,5 +64,21 @@ st.markdown("""
 st.markdown("<br>", unsafe_allow_html=True)
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
-    if st.button("🎓 Ir para a página do Estudante"):
-        st.switch_page("pages/Estudante.py")
+    st.markdown("""
+<div style="text-align: center; margin-top: 2rem;">
+    <a href="/Estudante" target="_self" style="
+        background-color: #3366cc;
+        color: white;
+        padding: 12px 24px;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 8px;
+        text-decoration: none;
+        display: inline-block;
+        box-shadow: 0px 4px 6px rgba(0,0,0,0.2);
+    ">
+        🎓 Ir para a página do Estudante
+    </a>
+</div>
+""", unsafe_allow_html=True)
+
